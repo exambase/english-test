@@ -1,6 +1,5 @@
 export default async function handler(req, res) {
   const allowOrigin = process.env.ALLOW_ORIGIN || "*";
-
   res.setHeader("Access-Control-Allow-Origin", allowOrigin);
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -31,12 +30,12 @@ export default async function handler(req, res) {
     const maxScore = Number(question.markCategory || question.max_score || 0) || 0;
 
     const schemaNote = maxScore === 40
-      ? `Return JSON only with keys: score, max_score, band, feedback, breakdown, subscores. subscores must be an object with content_and_organisation and technical_accuracy.`
-      : `Return JSON only with keys: score, max_score, band, feedback, breakdown.`;
+      ? 'Return JSON only with keys: score, max_score, band, feedback, breakdown, subscores. subscores must be an object with content_and_organisation and technical_accuracy.'
+      : 'Return JSON only with keys: score, max_score, band, feedback, breakdown.';
 
     const rubricText = question?.rubric
       ? JSON.stringify(question.rubric, null, 2)
-      : "No detailed rubric object supplied. Use the mark category, assessment objective and question type.";
+      : 'No detailed rubric object supplied. Use the mark category, assessment objective and question type.';
 
     const prompt = `You are a strict but fair examiner marking an original mock question in the style of AQA GCSE English Language.
 
@@ -56,9 +55,7 @@ Bullet points: ${Array.isArray(question.bulletPoints) ? question.bulletPoints.jo
 Options: ${Array.isArray(question.options) ? question.options.join(" | ") : ""}
 Accepted points: ${Array.isArray(question.acceptedPoints) ? question.acceptedPoints.join(" | ") : ""}
 Rubric object: ${rubricText}
-
-Student answer:
-${typeof answer === "string" ? answer : JSON.stringify(answer)}
+Student answer: ${typeof answer === "string" ? answer : JSON.stringify(answer)}
 
 Mark the answer realistically for this style of GCSE question.
 - Give a sensible band or level label.
@@ -66,12 +63,13 @@ Mark the answer realistically for this style of GCSE question.
 - breakdown must be an array of short objects like {"label":"Strength","detail":"..."}.
 - Never award above the maximum marks.
 - If the answer is off-task or extremely weak, award low marks.
+
 ${schemaNote}`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -116,6 +114,7 @@ ${schemaNote}`;
     }
 
     const safeScore = Math.max(0, Math.min(maxScore, Number(parsed.score || 0)));
+
     const result = {
       score: safeScore,
       max_score: maxScore,
