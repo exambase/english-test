@@ -4,7 +4,7 @@ const BANK_CANDIDATE_URLS = [
   "/data/question-bank.json"
 ];
 
-const ENDPOINT_STORAGE_KEY = "aqaPaperMarkerEndpoint";
+const MARKER_ENDPOINT = "https://english-test-five.vercel.app/api/mark";
 const PAPER_MODE_STORAGE_KEY = "aqaPaperMode";
 const ANSWER_STORAGE_PREFIX = "aqaPaperAnswers:";
 
@@ -12,17 +12,13 @@ const state = {
   bank: null,
   currentPack: null,
   paperMode: localStorage.getItem(PAPER_MODE_STORAGE_KEY) || "Paper 1",
-  markerEndpoint: localStorage.getItem(ENDPOINT_STORAGE_KEY) || "",
+  markerEndpoint: MARKER_ENDPOINT,
   answers: {},
   lastCopyText: "",
   lastResults: []
 };
 
 const dom = {
-  bankStatus: document.getElementById("bank-status"),
-  endpointInput: document.getElementById("endpoint-input"),
-  saveEndpointBtn: document.getElementById("save-endpoint-btn"),
-  clearEndpointBtn: document.getElementById("clear-endpoint-btn"),
   paperMode: document.getElementById("paper-mode"),
   generatePaperBtn: document.getElementById("generate-paper-btn"),
   currentPaperMeta: document.getElementById("current-paper-meta"),
@@ -33,8 +29,9 @@ const dom = {
   copyFeedbackBtn: document.getElementById("copy-feedback-btn")
 };
 
-dom.endpointInput.value = state.markerEndpoint;
-dom.paperMode.value = state.paperMode;
+if (dom.paperMode) {
+  dom.paperMode.value = state.paperMode;
+}
 
 init();
 
@@ -44,19 +41,6 @@ async function init() {
 }
 
 function bindStaticEvents() {
-  dom.saveEndpointBtn.addEventListener("click", () => {
-    state.markerEndpoint = dom.endpointInput.value.trim();
-    localStorage.setItem(ENDPOINT_STORAGE_KEY, state.markerEndpoint);
-    setBankStatus(state.markerEndpoint ? "Marker endpoint saved in this browser." : "Marker endpoint cleared.");
-  });
-
-  dom.clearEndpointBtn.addEventListener("click", () => {
-    state.markerEndpoint = "";
-    dom.endpointInput.value = "";
-    localStorage.removeItem(ENDPOINT_STORAGE_KEY);
-    setBankStatus("Marker endpoint cleared.");
-  });
-
   dom.paperMode.addEventListener("change", () => {
     state.paperMode = dom.paperMode.value;
     localStorage.setItem(PAPER_MODE_STORAGE_KEY, state.paperMode);
@@ -68,7 +52,6 @@ function bindStaticEvents() {
   });
 
   dom.clearAnswersBtn.addEventListener("click", clearCurrentAnswers);
-
   dom.markPaperBtn.addEventListener("click", markCurrentPaper);
 
   dom.copyFeedbackBtn.addEventListener("click", async () => {
@@ -76,7 +59,7 @@ function bindStaticEvents() {
     try {
       await navigator.clipboard.writeText(state.lastCopyText);
       showNotice("Feedback copied to clipboard.");
-    } catch (error) {
+    } catch {
       showNotice("Clipboard copy failed. You may need to allow clipboard access.", true);
     }
   });
@@ -86,18 +69,14 @@ function bindStaticEvents() {
 }
 
 async function loadBank() {
-  setBankStatus("Loading question bank…");
   const fetched = await fetchBankWithFallback();
 
   if (!fetched) {
-    setBankStatus("Question bank failed to load.");
-    dom.paperView.innerHTML = `<div class="notice error">The question bank could not be loaded from JSON or from the embedded fallback.</div>`;
+    dom.paperView.innerHTML = `<div class="notice error">The paper bank could not be loaded.</div>`;
     return;
   }
 
   state.bank = fetched;
-  const packCount = Array.isArray(state.bank.packs) ? state.bank.packs.length : 0;
-  setBankStatus(`${packCount} full paper packs loaded.`);
   generatePaper(state.paperMode);
 }
 
@@ -110,7 +89,7 @@ async function fetchBankWithFallback() {
       if (isValidBank(data)) {
         return data;
       }
-    } catch (error) {
+    } catch {
       // Try the next candidate URL.
     }
   }
@@ -180,8 +159,8 @@ function renderPaper() {
       ${escapeHtml(String(totalMarks))}
     </div>
     <div class="meta-card">
-      <strong>Pack</strong><br />
-      ${escapeHtml(pack.title)}
+      <strong>Questions</strong><br />
+      ${escapeHtml(String(pack.questions.length))}
     </div>
   `;
 
@@ -191,13 +170,12 @@ function renderPaper() {
         <div>
           <p class="paper-brand">AQA GCSE English Language</p>
           <h1>${escapeHtml(pack.paper)}: ${escapeHtml(paperInfo?.title || "")}</h1>
-          <p class="muted">Original mock paper pack • Theme: ${escapeHtml(pack.theme)}</p>
         </div>
         <div class="total-badge">${escapeHtml(String(totalMarks))} marks</div>
       </div>
       <div class="front-boxes">
         <div class="front-box"><strong>Instructions</strong><br />Answer all questions. Write your answers in the spaces provided.</div>
-        <div class="front-box"><strong>Reminder</strong><br />This dashboard generates a full paper automatically from the bank.</div>
+        <div class="front-box"><strong>Time allowed</strong><br />${escapeHtml(paperInfo?.time || "1 hour 45 minutes")}</div>
       </div>
     </div>
 
@@ -220,6 +198,7 @@ function renderPaper() {
 }
 
 function renderSourceBlock(source) {
+  if (!source) return "";
   const lines = Array.isArray(source.lines) ? source.lines : [];
   return `
     <div class="source-block">
@@ -306,7 +285,6 @@ function renderTrueStatementAnswerArea(question, selectedValues) {
           `;
         }).join("")}
       </div>
-      <div class="muted">The selected letters are saved automatically in this browser.</div>
     </div>
   `;
 }
@@ -381,6 +359,7 @@ function clearCurrentAnswers() {
   renderPaper();
   dom.resultWindow.innerHTML = `<p class="muted">All answer boxes for this paper have been cleared.</p>`;
   state.lastCopyText = "";
+  state.lastResults = [];
   dom.copyFeedbackBtn.disabled = true;
 }
 
@@ -391,14 +370,9 @@ async function markCurrentPaper() {
     return;
   }
 
-  const endpoint = dom.endpointInput.value.trim();
-  const needsEndpoint = pack.questions.some((question) => {
-    const answer = normaliseAnswerForSending(question, state.answers[question.id]);
-    return answer && question.questionType !== "select-true-statements";
-  });
-
-  if (needsEndpoint && !endpoint) {
-    showNotice("Add your /api/mark endpoint first, then click Mark this paper again.", true);
+  const endpoint = state.markerEndpoint;
+  if (!endpoint) {
+    showNotice("The marker is not configured in the page code.", true);
     return;
   }
 
@@ -417,14 +391,7 @@ async function markCurrentPaper() {
     showNotice(`Marking ${question.questionNumber} (${index + 1} of ${pack.questions.length})…`);
 
     if (!answer) {
-      const blankResult = {
-        score: 0,
-        max_score: Number(question.markCategory || 0),
-        band: "0",
-        feedback: "No answer was provided for this question.",
-        breakdown: [{ label: "Status", detail: "Blank response" }],
-        subscores: question.markCategory === 40 ? { content_and_organisation: 0, technical_accuracy: 0 } : null
-      };
+      const blankResult = buildBlankResult(question);
       results.push({ question, result: blankResult });
       renderLiveProgress(results, runningTotal, maxTotal);
       continue;
@@ -439,17 +406,18 @@ async function markCurrentPaper() {
       results.push({ question, result });
       renderLiveProgress(results, runningTotal, maxTotal);
     } catch (error) {
-      results.push({
-        question,
-        result: {
-          score: 0,
-          max_score: Number(question.markCategory || 0),
-          band: "Error",
-          feedback: error?.message || "This question could not be marked.",
-          breakdown: [{ label: "Problem", detail: "The marker endpoint did not return a usable result." }],
-          subscores: question.markCategory === 40 ? { content_and_organisation: 0, technical_accuracy: 0 } : null
-        }
-      });
+      const failedResult = {
+        score: 0,
+        max_score: Number(question.markCategory || 0),
+        level: "Error",
+        strengths: [],
+        weaknesses: ["The marking service did not return a usable result."],
+        why_this_mark: error?.message || "This question could not be marked.",
+        next_level: "Try marking the paper again in a moment.",
+        feedback: error?.message || "This question could not be marked.",
+        subscores: question.markCategory === 40 ? { content_and_organisation: 0, technical_accuracy: 0 } : null
+      };
+      results.push({ question, result: failedResult });
       renderLiveProgress(results, runningTotal, maxTotal);
     }
   }
@@ -460,6 +428,27 @@ async function markCurrentPaper() {
   dom.copyFeedbackBtn.disabled = false;
   dom.markPaperBtn.disabled = false;
   dom.markPaperBtn.textContent = "Mark this paper";
+}
+
+function buildBlankResult(question) {
+  const subscores = question.markCategory === 40
+    ? { content_and_organisation: 0, technical_accuracy: 0 }
+    : null;
+
+  return {
+    score: 0,
+    max_score: Number(question.markCategory || 0),
+    level: "0",
+    strengths: [],
+    weaknesses: [
+      "No answer was provided.",
+      "There is no evidence or explanation to reward."
+    ],
+    why_this_mark: "This response is blank, so it cannot be credited.",
+    next_level: "Attempt the question and include clear points supported by the source or task.",
+    feedback: "This response is blank, so it cannot be credited.",
+    subscores
+  };
 }
 
 function renderLiveProgress(results, runningTotal, maxTotal) {
@@ -484,7 +473,9 @@ async function sendForMarking(endpoint, question, answer, pack) {
         id: pack.id,
         paper: pack.paper,
         title: pack.title,
-        theme: pack.theme
+        theme: pack.theme,
+        sourceA: pack.sourceA || null,
+        sourceB: pack.sourceB || null
       }
     })
   });
@@ -500,14 +491,55 @@ async function sendForMarking(endpoint, question, answer, pack) {
     throw new Error(data.error || `Marking request failed (${response.status}).`);
   }
 
+  return normaliseRemoteResult(data, question);
+}
+
+function normaliseRemoteResult(data, question) {
+  const score = clampNumber(data.score, 0, Number(question.markCategory || 0));
+  const maxScore = clampNumber(data.max_score, 0, Number(question.markCategory || 0)) || Number(question.markCategory || 0);
+  const level = firstText(data.level, data.band, data.mark_band, "Unbanded");
+  const strengths = normaliseStringArray(data.strengths, 3);
+  const weaknesses = normaliseStringArray(data.weaknesses || data.improvements, 2);
+  const whyThisMark = firstText(data.why_this_mark, data.whyThisMark, data.feedback, "No explanation returned.");
+  const nextLevel = firstText(data.next_level, data.nextLevel, data.how_to_reach_next_level, "Develop the answer further with precise references and more detailed explanation.");
+  const subscores = data.subscores && typeof data.subscores === "object"
+    ? {
+        content_and_organisation: Number(data.subscores.content_and_organisation ?? 0),
+        technical_accuracy: Number(data.subscores.technical_accuracy ?? 0)
+      }
+    : null;
+
+  if ((!strengths.length || !weaknesses.length) && Array.isArray(data.breakdown)) {
+    const fallbackNotes = data.breakdown.map(normaliseBreakdownItem).filter(Boolean);
+    if (!strengths.length) {
+      strengths.push(...fallbackNotes.slice(0, 3));
+    }
+    if (!weaknesses.length && fallbackNotes.length > 3) {
+      weaknesses.push(...fallbackNotes.slice(3, 5));
+    }
+  }
+
   return {
-    score: Number.isFinite(Number(data.score)) ? Number(data.score) : 0,
-    max_score: Number.isFinite(Number(data.max_score)) ? Number(data.max_score) : Number(question.markCategory || 0),
-    band: typeof data.band === "string" ? data.band : "Unbanded",
-    feedback: typeof data.feedback === "string" ? data.feedback : "No feedback returned.",
-    breakdown: Array.isArray(data.breakdown) ? data.breakdown : [],
-    subscores: data.subscores && typeof data.subscores === "object" ? data.subscores : null
+    score,
+    max_score: maxScore,
+    level,
+    strengths: strengths.slice(0, 3),
+    weaknesses: weaknesses.slice(0, 3),
+    why_this_mark: whyThisMark,
+    next_level: nextLevel,
+    feedback: whyThisMark,
+    subscores
   };
+}
+
+function normaliseBreakdownItem(item) {
+  if (typeof item === "string") return item.trim();
+  if (item && typeof item === "object") {
+    const label = item.label ? `${item.label}: ` : "";
+    const detail = item.detail ? String(item.detail).trim() : "";
+    return `${label}${detail}`.trim();
+  }
+  return "";
 }
 
 function markTrueStatementsLocally(question, answer) {
@@ -517,26 +549,40 @@ function markTrueStatementsLocally(question, answer) {
   const wrong = selected.filter((value) => !correct.includes(value));
   const missed = correct.filter((value) => !selected.includes(value));
 
-  const breakdown = [
-    { label: "Selected", detail: selected.length ? selected.join(", ") : "No options chosen" },
-    { label: "Correct answers", detail: correct.join(", ") }
-  ];
+  const strengths = [];
+  if (score > 0) {
+    strengths.push(`Correct selections: ${selected.filter((value) => correct.includes(value)).join(", ")}.`);
+  }
+  if (selected.length) {
+    strengths.push(`You selected: ${selected.join(", ")}.`);
+  }
+  if (score === 4) {
+    strengths.push("All four credited statements were identified.");
+  }
 
+  const weaknesses = [];
   if (wrong.length) {
-    breakdown.push({ label: "Not credited", detail: wrong.join(", ") });
+    weaknesses.push(`These choices are not supported by the source: ${wrong.join(", ")}.`);
   }
   if (missed.length) {
-    breakdown.push({ label: "Missed", detail: missed.join(", ") });
+    weaknesses.push(`You missed these credited choices: ${missed.join(", ")}.`);
   }
 
   return {
     score,
     max_score: 4,
-    band: score === 4 ? "Full marks" : score >= 2 ? "Partial" : score >= 1 ? "Limited" : "0",
+    level: score === 4 ? "Full marks" : score >= 2 ? "Partial" : score >= 1 ? "Limited" : "0",
+    strengths,
+    weaknesses,
+    why_this_mark: score === 4
+      ? "All four correct statements were selected, so this response gains full marks."
+      : `You selected ${score} correct statement${score === 1 ? "" : "s"}, so the mark reflects the number of statements supported by the text.`,
+    next_level: score === 4
+      ? "Keep checking each statement carefully against the wording of the source."
+      : "Compare each statement closely with the wording of the source and only tick statements that are directly supported.",
     feedback: score === 4
-      ? "All four correct statements were selected."
-      : `You selected ${score} correct statement${score === 1 ? "" : "s"}. Check Source A carefully and choose only the statements supported by the text.`,
-    breakdown,
+      ? "All four correct statements were selected, so this response gains full marks."
+      : `You selected ${score} correct statement${score === 1 ? "" : "s"}. Check each statement more carefully against the source.`,
     subscores: null
   };
 }
@@ -557,8 +603,8 @@ function renderResultWindow(pack, results) {
     <div class="result-summary">
       <div class="result-total">${escapeHtml(String(total))}/${escapeHtml(String(maxTotal))}</div>
       <div>
-        <strong>${escapeHtml(pack.paper)} • ${escapeHtml(pack.title)}</strong><br />
-        <span class="muted">${escapeHtml(results.length)} questions marked</span>
+        <strong>${escapeHtml(pack.paper)}</strong><br />
+        <span class="muted">${escapeHtml(String(results.length))} questions marked</span>
       </div>
     </div>
     <div class="result-list">
@@ -568,7 +614,8 @@ function renderResultWindow(pack, results) {
 }
 
 function renderResultCard(question, result) {
-  const breakdown = Array.isArray(result.breakdown) ? result.breakdown : [];
+  const strengths = Array.isArray(result.strengths) ? result.strengths.filter(Boolean) : [];
+  const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses.filter(Boolean) : [];
   const subscores = result.subscores && typeof result.subscores === "object" ? result.subscores : null;
 
   return `
@@ -580,29 +627,29 @@ function renderResultCard(question, result) {
         </div>
         <div class="question-score">${escapeHtml(String(result.score))}/${escapeHtml(String(result.max_score))}</div>
       </div>
-      <div class="badge-row"><span class="badge">${escapeHtml(result.band || "Unbanded")}</span></div>
+      ${result.level ? `<div class="badge-row"><span class="badge">${escapeHtml(result.level)}</span></div>` : ""}
       ${subscores ? `
         <div class="subscore-box">
           <div><strong>Content and organisation:</strong> ${escapeHtml(String(subscores.content_and_organisation ?? 0))}</div>
           <div><strong>Technical accuracy:</strong> ${escapeHtml(String(subscores.technical_accuracy ?? 0))}</div>
         </div>
       ` : ""}
-      <p class="question-text">${escapeHtml(result.feedback || "No feedback returned.")}</p>
-      ${breakdown.length ? `<ul class="breakdown-list">${breakdown.map(renderBreakdownItem).join("")}</ul>` : ""}
+      ${strengths.length ? `
+        <div>
+          <strong>Strengths</strong>
+          <ul class="breakdown-list">${strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+      ` : ""}
+      ${weaknesses.length ? `
+        <div>
+          <strong>Weaknesses / Improvements</strong>
+          <ul class="breakdown-list">${weaknesses.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+      ` : ""}
+      <p class="question-text"><strong>Why this mark:</strong> ${escapeHtml(result.why_this_mark || "No explanation returned.")}</p>
+      <p class="question-text"><strong>How to reach the next level:</strong> ${escapeHtml(result.next_level || "Develop the answer further with precise textual support and more detailed explanation.")}</p>
     </article>
   `;
-}
-
-function renderBreakdownItem(item) {
-  if (typeof item === "string") {
-    return `<li>${escapeHtml(item)}</li>`;
-  }
-  if (item && typeof item === "object") {
-    const label = item.label ? `<strong>${escapeHtml(item.label)}:</strong> ` : "";
-    const detail = item.detail ? escapeHtml(item.detail) : "";
-    return `<li>${label}${detail}</li>`;
-  }
-  return `<li>${escapeHtml(String(item))}</li>`;
 }
 
 function buildCopyText(pack, results) {
@@ -611,8 +658,7 @@ function buildCopyText(pack, results) {
 
   const lines = [
     "AQA GCSE English Language Mock Marker",
-    `${pack.paper} - ${pack.title}`,
-    `Theme: ${pack.theme}`,
+    `${pack.paper}`,
     `Total score: ${total}/${maxTotal}`,
     ""
   ];
@@ -620,30 +666,27 @@ function buildCopyText(pack, results) {
   results.forEach(({ question, result }) => {
     lines.push(`${question.questionNumber} (${question.markCategory} marks)`);
     lines.push(`Score: ${result.score}/${result.max_score}`);
-    lines.push(`Band: ${result.band}`);
+    if (result.level) {
+      lines.push(`Level: ${result.level}`);
+    }
     if (result.subscores) {
       lines.push(`Content and organisation: ${result.subscores.content_and_organisation ?? 0}`);
       lines.push(`Technical accuracy: ${result.subscores.technical_accuracy ?? 0}`);
     }
-    lines.push(`Feedback: ${result.feedback}`);
-    if (Array.isArray(result.breakdown) && result.breakdown.length) {
-      lines.push("Marking breakdown:");
-      result.breakdown.forEach((item) => {
-        if (typeof item === "string") {
-          lines.push(`- ${item}`);
-        } else if (item && typeof item === "object") {
-          lines.push(`- ${item.label ? item.label + ": " : ""}${item.detail || ""}`);
-        }
-      });
+    if (Array.isArray(result.strengths) && result.strengths.length) {
+      lines.push("Strengths:");
+      result.strengths.forEach((item) => lines.push(`- ${item}`));
     }
+    if (Array.isArray(result.weaknesses) && result.weaknesses.length) {
+      lines.push("Weaknesses / Improvements:");
+      result.weaknesses.forEach((item) => lines.push(`- ${item}`));
+    }
+    lines.push(`Why this mark: ${result.why_this_mark || ""}`);
+    lines.push(`How to reach the next level: ${result.next_level || ""}`);
     lines.push("");
   });
 
   return lines.join("\n");
-}
-
-function setBankStatus(message) {
-  dom.bankStatus.textContent = message;
 }
 
 function showNotice(message, isError = false) {
@@ -659,6 +702,27 @@ function cssEscape(value) {
     return window.CSS.escape(value);
   }
   return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
+function normaliseStringArray(value, maxItems) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function clampNumber(value, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return min;
+  return Math.max(min, Math.min(max, number));
 }
 
 function escapeHtml(value) {
