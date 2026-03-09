@@ -1,0 +1,50 @@
+{
+  "files": [
+    {
+      "id": "question-bank",
+      "file": "question-bank.json",
+      "packs": 10,
+      "questions": 50
+    },
+    {
+      "id": "paper1-packs",
+      "file": "paper1-packs.json",
+      "packs": 5
+    },
+    {
+      "id": "paper2-packs",
+      "file": "paper2-packs.json",
+      "packs": 5
+    },
+    {
+      "id": "4-mark",
+      "file": "4-mark.json",
+      "count": 10
+    },
+    {
+      "id": "8-mark",
+      "file": "8-mark.json",
+      "count": 15
+    },
+    {
+      "id": "12-mark",
+      "file": "12-mark.json",
+      "count": 5
+    },
+    {
+      "id": "16-mark",
+      "file": "16-mark.json",
+      "count": 5
+    },
+    {
+      "id": "20-mark",
+      "file": "20-mark.json",
+      "count": 5
+    },
+    {
+      "id": "40-mark",
+      "file": "40-mark.json",
+      "count": 10
+    }
+  ]
+}

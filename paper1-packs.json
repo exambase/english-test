@@ -1,0 +1,665 @@
+{
+  "meta": {
+    "title": "AQA GCSE English Language Mock Paper Bank",
+    "subtitle": "Original mock packs in the style of AQA GCSE English Language papers",
+    "version": "2.0.0",
+    "notes": [
+      "All sources, extracts and questions are original mock materials.",
+      "The bank is organised as complete paper packs so the dashboard can generate a full paper instead of a single isolated question.",
+      "A fallback copy of the bank is embedded in index.html so the dashboard still loads if JSON fetching fails."
+    ]
+  },
+  "paper": "Paper 1",
+  "packs": [
+    {
+      "id": "p1-harbour",
+      "paper": "Paper 1",
+      "title": "Harbour at Dawn",
+      "theme": "arrival and secrecy",
+      "sourceA": {
+        "label": "Source A",
+        "title": "Harbour at Dawn",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The harbour did not appear all at once; it gathered itself out of the fog in pieces.",
+          "First came the bell, striking somewhere beyond the water.",
+          "Then Mara saw the black posts of the pier, beaded with rain.",
+          "Ropes knocked softly against wooden masts.",
+          "A gull swooped low enough to stir the mist above her head.",
+          "Everything smelled of salt, oil and wet rope.",
+          "She kept one hand in her pocket around the folded note.",
+          "It had become soft at the edges from being opened so often.",
+          "Ahead of her, a single lamp burned in the harbour office, pale and stubborn.",
+          "For a moment she wanted to turn back to the bus shelter and wait for daylight.",
+          "But the bell rang again, and the sound seemed less like a warning than a summons.",
+          "Mara lifted her case and walked on, straight into the bright circle of the lamp."
+        ]
+      },
+      "questions": [
+        {
+          "id": "p1-harbour-q1",
+          "questionNumber": "Question 1",
+          "section": "Section A: Reading",
+          "markCategory": 4,
+          "questionType": "retrieve-list",
+          "assessmentObjective": "AO1",
+          "instructionsTop": "Read again the first part of Source A.",
+          "focusLines": "Lines 1 to 4",
+          "questionText": "List four things from this part of the source.",
+          "acceptedPoints": [
+            "The harbour appears gradually through fog.",
+            "A bell is striking somewhere beyond the water.",
+            "The pier posts are black and wet with rain.",
+            "Ropes knock softly against the masts.",
+            "A gull swoops low above Mara."
+          ],
+          "rubric": {
+            "name": "AO1 retrieval",
+            "maxScore": 4,
+            "notes": "Award 1 mark for each valid, distinct point from the specified lines only. No explanation is required."
+          }
+        },
+        {
+          "id": "p1-harbour-q2",
+          "questionNumber": "Question 2",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "language-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "Look in detail at Lines 4 to 8 of Source A.",
+          "focusLines": "Lines 4 to 8",
+          "questionText": "How does the writer use language to describe the harbour and Mara's feelings?",
+          "bulletPoints": [
+            "You could include the writer's choice of words and phrases",
+            "You could include language features and techniques",
+            "You could include the effects on the reader"
+          ],
+          "rubric": {
+            "name": "AO2 language analysis",
+            "maxScore": 8,
+            "notes": "Reward clear explanation of language choices, precise references, and relevant effects."
+          }
+        },
+        {
+          "id": "p1-harbour-q3",
+          "questionNumber": "Question 3",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "structure-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "You now need to think about the whole of the source.",
+          "focusLines": "Whole source",
+          "questionText": "How has the writer structured the source to interest you as a reader?",
+          "bulletPoints": [
+            "You could write about what the writer focuses your attention on at the beginning",
+            "You could write about how and why the writer changes this focus as the source develops",
+            "You could write about structural features, shifts, contrasts and endings"
+          ],
+          "rubric": {
+            "name": "AO2 structure analysis",
+            "maxScore": 8,
+            "notes": "Reward understanding of structural methods and their effects across the source, supported by relevant references."
+          }
+        },
+        {
+          "id": "p1-harbour-q4",
+          "questionNumber": "Question 4",
+          "section": "Section A: Reading",
+          "markCategory": 20,
+          "questionType": "evaluation",
+          "assessmentObjective": "AO4",
+          "instructionsTop": "Focus this part of your answer on the second half of the source.",
+          "focusLines": "Lines 7 to the end",
+          "statement": "A student said, \"Mara seems frightened at first, but by the end of the source she seems drawn towards the harbour.\"",
+          "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+          "rubric": {
+            "name": "AO4 evaluation",
+            "maxScore": 20,
+            "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+          }
+        },
+        {
+          "id": "p1-harbour-q5",
+          "questionNumber": "Question 5",
+          "section": "Section B: Writing",
+          "markCategory": 40,
+          "questionType": "creative-writing",
+          "assessmentObjective": "AO5 / AO6",
+          "instructionsTop": "Write a description suggested by this picture, or write a story suggested by this title.",
+          "questionText": "Either write a description of a place that seems strange or half-hidden, or write a story about arriving somewhere before sunrise.",
+          "bulletPoints": [
+            "Communicate clearly and imaginatively",
+            "Organise ideas and use a range of vocabulary and sentence forms",
+            "Use accurate spelling, punctuation and grammar"
+          ],
+          "rubric": {
+            "name": "AO5/AO6 creative writing",
+            "maxScore": 40,
+            "notes": "Award up to 24 marks for content and organisation and up to 16 marks for technical accuracy."
+          }
+        }
+      ]
+    },
+    {
+      "id": "p1-fairground",
+      "paper": "Paper 1",
+      "title": "The Closed Fairground",
+      "theme": "memory and unease",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Closed Fairground",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The locked gates of the fairground glittered with last night's rain.",
+          "Beyond them, the rides stood completely still.",
+          "Bright bulbs rimmed the ferris wheel, but none of them were lit.",
+          "A torn poster slapped against a kiosk in the wind.",
+          "The smell of damp wood and old sugar drifted through the railings.",
+          "Jonah pressed his face closer and peered between the bars.",
+          "He had not been back since the summer his brother won a goldfish here and dropped it on the walk home.",
+          "Even now, he could picture the tiny silver body flashing on the pavement.",
+          "At the centre of the fairground, one painted horse on the carousel had come loose and leaned at an awkward angle.",
+          "It looked less like a toy than a warning.",
+          "When a speaker crackled into life with a burst of static, Jonah jumped back so sharply that his elbow struck the gate.",
+          "Then the music stopped, and the fairground seemed to hold its breath."
+        ]
+      },
+      "questions": [
+        {
+          "id": "p1-fairground-q1",
+          "questionNumber": "Question 1",
+          "section": "Section A: Reading",
+          "markCategory": 4,
+          "questionType": "retrieve-list",
+          "assessmentObjective": "AO1",
+          "instructionsTop": "Read again the first part of Source A.",
+          "focusLines": "Lines 1 to 4",
+          "questionText": "List four things from this part of the source.",
+          "acceptedPoints": [
+            "The gates are locked and wet with rain.",
+            "The rides are standing still.",
+            "The ferris wheel bulbs are not lit.",
+            "A torn poster hits a kiosk in the wind.",
+            "There is a smell of damp wood and old sugar."
+          ],
+          "rubric": {
+            "name": "AO1 retrieval",
+            "maxScore": 4,
+            "notes": "Award 1 mark for each valid, distinct point from the specified lines only. No explanation is required."
+          }
+        },
+        {
+          "id": "p1-fairground-q2",
+          "questionNumber": "Question 2",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "language-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "Look in detail at Lines 5 to 9 of Source A.",
+          "focusLines": "Lines 5 to 9",
+          "questionText": "How does the writer use language to present the fairground as both familiar and unsettling?",
+          "bulletPoints": [
+            "You could include the writer's choice of words and phrases",
+            "You could include language features and techniques",
+            "You could include the effects on the reader"
+          ],
+          "rubric": {
+            "name": "AO2 language analysis",
+            "maxScore": 8,
+            "notes": "Reward clear explanation of language choices, precise references, and relevant effects."
+          }
+        },
+        {
+          "id": "p1-fairground-q3",
+          "questionNumber": "Question 3",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "structure-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "You now need to think about the whole of the source.",
+          "focusLines": "Whole source",
+          "questionText": "How has the writer structured the source to hold your interest?",
+          "bulletPoints": [
+            "You could write about what the writer focuses your attention on at the beginning",
+            "You could write about how and why the writer changes this focus as the source develops",
+            "You could write about structural features, shifts, contrasts and endings"
+          ],
+          "rubric": {
+            "name": "AO2 structure analysis",
+            "maxScore": 8,
+            "notes": "Reward understanding of structural methods and their effects across the source, supported by relevant references."
+          }
+        },
+        {
+          "id": "p1-fairground-q4",
+          "questionNumber": "Question 4",
+          "section": "Section A: Reading",
+          "markCategory": 20,
+          "questionType": "evaluation",
+          "assessmentObjective": "AO4",
+          "instructionsTop": "Focus this part of your answer on the second half of the source.",
+          "focusLines": "Lines 7 to the end",
+          "statement": "A student said, \"The fairground feels lifeless, but it also seems ready to wake up at any moment.\"",
+          "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+          "rubric": {
+            "name": "AO4 evaluation",
+            "maxScore": 20,
+            "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+          }
+        },
+        {
+          "id": "p1-fairground-q5",
+          "questionNumber": "Question 5",
+          "section": "Section B: Writing",
+          "markCategory": 40,
+          "questionType": "creative-writing",
+          "assessmentObjective": "AO5 / AO6",
+          "instructionsTop": "Write a description suggested by this picture, or write a story suggested by this title.",
+          "questionText": "Either write a description of an abandoned place, or write a story about returning to somewhere full of memories.",
+          "bulletPoints": [
+            "Communicate clearly and imaginatively",
+            "Organise ideas and use a range of vocabulary and sentence forms",
+            "Use accurate spelling, punctuation and grammar"
+          ],
+          "rubric": {
+            "name": "AO5/AO6 creative writing",
+            "maxScore": 40,
+            "notes": "Award up to 24 marks for content and organisation and up to 16 marks for technical accuracy."
+          }
+        }
+      ]
+    },
+    {
+      "id": "p1-library",
+      "paper": "Paper 1",
+      "title": "The Library Stairwell",
+      "theme": "curiosity and suspense",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Library Stairwell",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The public library had already closed when Lina noticed the light under the basement door.",
+          "Upstairs, every shelf stood in perfect shadow.",
+          "Only the returns desk glowed faintly from the streetlamp outside.",
+          "Dust drifted through the beam like ash in slow motion.",
+          "She should have gone home, but the light below seemed too deliberate to ignore.",
+          "Each stair creaked differently as she descended, as though the building were testing her step by step.",
+          "The air changed first: warmer, drier, carrying the faint smell of metal and paper glue.",
+          "Then she heard the steady turning of a page.",
+          "At the bottom of the stairwell she saw a room she had never known existed, lined with narrow cabinets and labelled boxes.",
+          "Someone sat at a desk inside, back turned, writing with a fountain pen.",
+          "Lina felt a thrill of discovery, followed immediately by the colder knowledge that she was not meant to be there.",
+          "The chair began to turn."
+        ]
+      },
+      "questions": [
+        {
+          "id": "p1-library-q1",
+          "questionNumber": "Question 1",
+          "section": "Section A: Reading",
+          "markCategory": 4,
+          "questionType": "retrieve-list",
+          "assessmentObjective": "AO1",
+          "instructionsTop": "Read again the first part of Source A.",
+          "focusLines": "Lines 1 to 4",
+          "questionText": "List four things from this part of the source.",
+          "acceptedPoints": [
+            "The library is already closed.",
+            "There is a light under the basement door.",
+            "The shelves are in shadow.",
+            "The returns desk glows faintly from the streetlamp.",
+            "Dust drifts through the beam."
+          ],
+          "rubric": {
+            "name": "AO1 retrieval",
+            "maxScore": 4,
+            "notes": "Award 1 mark for each valid, distinct point from the specified lines only. No explanation is required."
+          }
+        },
+        {
+          "id": "p1-library-q2",
+          "questionNumber": "Question 2",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "language-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "Look in detail at Lines 5 to 8 of Source A.",
+          "focusLines": "Lines 5 to 8",
+          "questionText": "How does the writer use language to make Lina's descent into the basement seem tense and mysterious?",
+          "bulletPoints": [
+            "You could include the writer's choice of words and phrases",
+            "You could include language features and techniques",
+            "You could include the effects on the reader"
+          ],
+          "rubric": {
+            "name": "AO2 language analysis",
+            "maxScore": 8,
+            "notes": "Reward clear explanation of language choices, precise references, and relevant effects."
+          }
+        },
+        {
+          "id": "p1-library-q3",
+          "questionNumber": "Question 3",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "structure-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "You now need to think about the whole of the source.",
+          "focusLines": "Whole source",
+          "questionText": "How has the writer structured the source to build suspense?",
+          "bulletPoints": [
+            "You could write about what the writer focuses your attention on at the beginning",
+            "You could write about how and why the writer changes this focus as the source develops",
+            "You could write about structural features, shifts, contrasts and endings"
+          ],
+          "rubric": {
+            "name": "AO2 structure analysis",
+            "maxScore": 8,
+            "notes": "Reward understanding of structural methods and their effects across the source, supported by relevant references."
+          }
+        },
+        {
+          "id": "p1-library-q4",
+          "questionNumber": "Question 4",
+          "section": "Section A: Reading",
+          "markCategory": 20,
+          "questionType": "evaluation",
+          "assessmentObjective": "AO4",
+          "instructionsTop": "Focus this part of your answer on the second half of the source.",
+          "focusLines": "Lines 7 to the end",
+          "statement": "A student said, \"The ending is effective because it turns curiosity into danger.\"",
+          "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+          "rubric": {
+            "name": "AO4 evaluation",
+            "maxScore": 20,
+            "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+          }
+        },
+        {
+          "id": "p1-library-q5",
+          "questionNumber": "Question 5",
+          "section": "Section B: Writing",
+          "markCategory": 40,
+          "questionType": "creative-writing",
+          "assessmentObjective": "AO5 / AO6",
+          "instructionsTop": "Write a description suggested by this picture, or write a story suggested by this title.",
+          "questionText": "Either write a description of exploring a building after hours, or write a story about discovering a hidden room.",
+          "bulletPoints": [
+            "Communicate clearly and imaginatively",
+            "Organise ideas and use a range of vocabulary and sentence forms",
+            "Use accurate spelling, punctuation and grammar"
+          ],
+          "rubric": {
+            "name": "AO5/AO6 creative writing",
+            "maxScore": 40,
+            "notes": "Award up to 24 marks for content and organisation and up to 16 marks for technical accuracy."
+          }
+        }
+      ]
+    },
+    {
+      "id": "p1-bridge",
+      "paper": "Paper 1",
+      "title": "The Bridge After the Flood",
+      "theme": "community and change",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Bridge After the Flood",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "By noon, the river had dropped enough for the old bridge to show itself again.",
+          "Its stone back rose out of the brown water like the spine of some patient animal.",
+          "Branches and plastic bottles clung to the arches.",
+          "Mud striped the handrail where the flood had reached and then withdrawn.",
+          "Nadia crossed the square carrying a broom borrowed from the caf\u00e9.",
+          "Every doorway wore the same mark of yesterday's disaster.",
+          "Shopkeepers spoke quietly as they swept, as if loud voices might call the rain back.",
+          "When Nadia stepped onto the bridge, her boots left clear prints on the wet stone.",
+          "She stopped halfway to look at the fields beyond the village, flattened and shining under a sudden patch of blue sky.",
+          "For the first time since the storm began, she imagined what the place might look like repaired.",
+          "Someone behind her started to laugh: not because anything was funny, but because the bridge was still here.",
+          "A moment later, several more voices joined in."
+        ]
+      },
+      "questions": [
+        {
+          "id": "p1-bridge-q1",
+          "questionNumber": "Question 1",
+          "section": "Section A: Reading",
+          "markCategory": 4,
+          "questionType": "retrieve-list",
+          "assessmentObjective": "AO1",
+          "instructionsTop": "Read again the first part of Source A.",
+          "focusLines": "Lines 1 to 4",
+          "questionText": "List four things from this part of the source.",
+          "acceptedPoints": [
+            "The river has dropped enough for the bridge to show again.",
+            "The bridge rises out of brown water.",
+            "Branches and plastic bottles cling to the arches.",
+            "Mud marks the handrail.",
+            "Nadia is carrying a broom from the caf\u00e9."
+          ],
+          "rubric": {
+            "name": "AO1 retrieval",
+            "maxScore": 4,
+            "notes": "Award 1 mark for each valid, distinct point from the specified lines only. No explanation is required."
+          }
+        },
+        {
+          "id": "p1-bridge-q2",
+          "questionNumber": "Question 2",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "language-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "Look in detail at Lines 6 to 10 of Source A.",
+          "focusLines": "Lines 6 to 10",
+          "questionText": "How does the writer use language to show both damage and hope in this part of the source?",
+          "bulletPoints": [
+            "You could include the writer's choice of words and phrases",
+            "You could include language features and techniques",
+            "You could include the effects on the reader"
+          ],
+          "rubric": {
+            "name": "AO2 language analysis",
+            "maxScore": 8,
+            "notes": "Reward clear explanation of language choices, precise references, and relevant effects."
+          }
+        },
+        {
+          "id": "p1-bridge-q3",
+          "questionNumber": "Question 3",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "structure-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "You now need to think about the whole of the source.",
+          "focusLines": "Whole source",
+          "questionText": "How has the writer structured the source to move from destruction towards recovery?",
+          "bulletPoints": [
+            "You could write about what the writer focuses your attention on at the beginning",
+            "You could write about how and why the writer changes this focus as the source develops",
+            "You could write about structural features, shifts, contrasts and endings"
+          ],
+          "rubric": {
+            "name": "AO2 structure analysis",
+            "maxScore": 8,
+            "notes": "Reward understanding of structural methods and their effects across the source, supported by relevant references."
+          }
+        },
+        {
+          "id": "p1-bridge-q4",
+          "questionNumber": "Question 4",
+          "section": "Section A: Reading",
+          "markCategory": 20,
+          "questionType": "evaluation",
+          "assessmentObjective": "AO4",
+          "instructionsTop": "Focus this part of your answer on the second half of the source.",
+          "focusLines": "Lines 7 to the end",
+          "statement": "A student said, \"Although the source begins with flood damage, it becomes increasingly hopeful.\"",
+          "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+          "rubric": {
+            "name": "AO4 evaluation",
+            "maxScore": 20,
+            "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+          }
+        },
+        {
+          "id": "p1-bridge-q5",
+          "questionNumber": "Question 5",
+          "section": "Section B: Writing",
+          "markCategory": 40,
+          "questionType": "creative-writing",
+          "assessmentObjective": "AO5 / AO6",
+          "instructionsTop": "Write a description suggested by this picture, or write a story suggested by this title.",
+          "questionText": "Either write a description of a place after extreme weather, or write a story about a community rebuilding something important.",
+          "bulletPoints": [
+            "Communicate clearly and imaginatively",
+            "Organise ideas and use a range of vocabulary and sentence forms",
+            "Use accurate spelling, punctuation and grammar"
+          ],
+          "rubric": {
+            "name": "AO5/AO6 creative writing",
+            "maxScore": 40,
+            "notes": "Award up to 24 marks for content and organisation and up to 16 marks for technical accuracy."
+          }
+        }
+      ]
+    },
+    {
+      "id": "p1-busdepot",
+      "paper": "Paper 1",
+      "title": "The Winter Bus Depot",
+      "theme": "routine and decision",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Winter Bus Depot",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "Snow had frozen in thin ridges across the depot yard, turning tyre marks into pale grooves.",
+          "At that hour, the buses looked larger than usual, silent and blind behind frosted windows.",
+          "Orange light from the maintenance shed spread across the ground in a shallow fan.",
+          "Inside the office, a radio whispered the early news to no one.",
+          "Imran stood at the timetable board with his gloves still on.",
+          "He had checked the same cancelled route three times already, as if repetition might change the chalked word.",
+          "Behind him, a kettle clicked off.",
+          "The mechanic who usually joked through every winter morning said nothing at all.",
+          "Imran thought of the village at the end of the route, cut off again, and of the old woman who always waited with exact change and a shopping trolley.",
+          "He imagined the road under drifts, the hedges erased, the engine struggling uphill.",
+          "Then he reached for the marker pen and wrote a new departure time in the corner of the board.",
+          "It was a small act, but it felt like a promise."
+        ]
+      },
+      "questions": [
+        {
+          "id": "p1-busdepot-q1",
+          "questionNumber": "Question 1",
+          "section": "Section A: Reading",
+          "markCategory": 4,
+          "questionType": "retrieve-list",
+          "assessmentObjective": "AO1",
+          "instructionsTop": "Read again the first part of Source A.",
+          "focusLines": "Lines 1 to 4",
+          "questionText": "List four things from this part of the source.",
+          "acceptedPoints": [
+            "Snow has frozen in ridges across the yard.",
+            "The buses look large, silent and blind.",
+            "Orange light comes from the maintenance shed.",
+            "A radio is whispering the news.",
+            "Imran stands at the timetable board."
+          ],
+          "rubric": {
+            "name": "AO1 retrieval",
+            "maxScore": 4,
+            "notes": "Award 1 mark for each valid, distinct point from the specified lines only. No explanation is required."
+          }
+        },
+        {
+          "id": "p1-busdepot-q2",
+          "questionNumber": "Question 2",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "language-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "Look in detail at Lines 8 to 12 of Source A.",
+          "focusLines": "Lines 8 to 12",
+          "questionText": "How does the writer use language to present Imran's sense of duty in this part of the source?",
+          "bulletPoints": [
+            "You could include the writer's choice of words and phrases",
+            "You could include language features and techniques",
+            "You could include the effects on the reader"
+          ],
+          "rubric": {
+            "name": "AO2 language analysis",
+            "maxScore": 8,
+            "notes": "Reward clear explanation of language choices, precise references, and relevant effects."
+          }
+        },
+        {
+          "id": "p1-busdepot-q3",
+          "questionNumber": "Question 3",
+          "section": "Section A: Reading",
+          "markCategory": 8,
+          "questionType": "structure-analysis",
+          "assessmentObjective": "AO2",
+          "instructionsTop": "You now need to think about the whole of the source.",
+          "focusLines": "Whole source",
+          "questionText": "How has the writer structured the source to show Imran moving from hesitation to action?",
+          "bulletPoints": [
+            "You could write about what the writer focuses your attention on at the beginning",
+            "You could write about how and why the writer changes this focus as the source develops",
+            "You could write about structural features, shifts, contrasts and endings"
+          ],
+          "rubric": {
+            "name": "AO2 structure analysis",
+            "maxScore": 8,
+            "notes": "Reward understanding of structural methods and their effects across the source, supported by relevant references."
+          }
+        },
+        {
+          "id": "p1-busdepot-q4",
+          "questionNumber": "Question 4",
+          "section": "Section A: Reading",
+          "markCategory": 20,
+          "questionType": "evaluation",
+          "assessmentObjective": "AO4",
+          "instructionsTop": "Focus this part of your answer on the second half of the source.",
+          "focusLines": "Lines 7 to the end",
+          "statement": "A student said, \"Imran's final decision matters because the writer makes even a small action feel important.\"",
+          "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+          "rubric": {
+            "name": "AO4 evaluation",
+            "maxScore": 20,
+            "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+          }
+        },
+        {
+          "id": "p1-busdepot-q5",
+          "questionNumber": "Question 5",
+          "section": "Section B: Writing",
+          "markCategory": 40,
+          "questionType": "creative-writing",
+          "assessmentObjective": "AO5 / AO6",
+          "instructionsTop": "Write a description suggested by this picture, or write a story suggested by this title.",
+          "questionText": "Either write a description of a cold morning at work, or write a story about making a difficult practical decision.",
+          "bulletPoints": [
+            "Communicate clearly and imaginatively",
+            "Organise ideas and use a range of vocabulary and sentence forms",
+            "Use accurate spelling, punctuation and grammar"
+          ],
+          "rubric": {
+            "name": "AO5/AO6 creative writing",
+            "maxScore": 40,
+            "notes": "Award up to 24 marks for content and organisation and up to 16 marks for technical accuracy."
+          }
+        }
+      ]
+    }
+  ]
+}

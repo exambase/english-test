@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "title": "AQA GCSE English Language Mock Paper Bank",
+    "subtitle": "Original mock packs in the style of AQA GCSE English Language papers",
+    "version": "2.0.0",
+    "notes": [
+      "All sources, extracts and questions are original mock materials.",
+      "The bank is organised as complete paper packs so the dashboard can generate a full paper instead of a single isolated question.",
+      "A fallback copy of the bank is embedded in index.html so the dashboard still loads if JSON fetching fails."
+    ]
+  },
+  "markCategory": 20,
+  "questions": [
+    {
+      "id": "p1-harbour-q4",
+      "questionNumber": "Question 4",
+      "section": "Section A: Reading",
+      "markCategory": 20,
+      "questionType": "evaluation",
+      "assessmentObjective": "AO4",
+      "instructionsTop": "Focus this part of your answer on the second half of the source.",
+      "focusLines": "Lines 7 to the end",
+      "statement": "A student said, \"Mara seems frightened at first, but by the end of the source she seems drawn towards the harbour.\"",
+      "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+      "rubric": {
+        "name": "AO4 evaluation",
+        "maxScore": 20,
+        "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+      },
+      "paper": "Paper 1",
+      "packId": "p1-harbour",
+      "packTitle": "Harbour at Dawn",
+      "theme": "arrival and secrecy",
+      "sourceA": {
+        "label": "Source A",
+        "title": "Harbour at Dawn",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The harbour did not appear all at once; it gathered itself out of the fog in pieces.",
+          "First came the bell, striking somewhere beyond the water.",
+          "Then Mara saw the black posts of the pier, beaded with rain.",
+          "Ropes knocked softly against wooden masts.",
+          "A gull swooped low enough to stir the mist above her head.",
+          "Everything smelled of salt, oil and wet rope.",
+          "She kept one hand in her pocket around the folded note.",
+          "It had become soft at the edges from being opened so often.",
+          "Ahead of her, a single lamp burned in the harbour office, pale and stubborn.",
+          "For a moment she wanted to turn back to the bus shelter and wait for daylight.",
+          "But the bell rang again, and the sound seemed less like a warning than a summons.",
+          "Mara lifted her case and walked on, straight into the bright circle of the lamp."
+        ]
+      }
+    },
+    {
+      "id": "p1-fairground-q4",
+      "questionNumber": "Question 4",
+      "section": "Section A: Reading",
+      "markCategory": 20,
+      "questionType": "evaluation",
+      "assessmentObjective": "AO4",
+      "instructionsTop": "Focus this part of your answer on the second half of the source.",
+      "focusLines": "Lines 7 to the end",
+      "statement": "A student said, \"The fairground feels lifeless, but it also seems ready to wake up at any moment.\"",
+      "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+      "rubric": {
+        "name": "AO4 evaluation",
+        "maxScore": 20,
+        "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+      },
+      "paper": "Paper 1",
+      "packId": "p1-fairground",
+      "packTitle": "The Closed Fairground",
+      "theme": "memory and unease",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Closed Fairground",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The locked gates of the fairground glittered with last night's rain.",
+          "Beyond them, the rides stood completely still.",
+          "Bright bulbs rimmed the ferris wheel, but none of them were lit.",
+          "A torn poster slapped against a kiosk in the wind.",
+          "The smell of damp wood and old sugar drifted through the railings.",
+          "Jonah pressed his face closer and peered between the bars.",
+          "He had not been back since the summer his brother won a goldfish here and dropped it on the walk home.",
+          "Even now, he could picture the tiny silver body flashing on the pavement.",
+          "At the centre of the fairground, one painted horse on the carousel had come loose and leaned at an awkward angle.",
+          "It looked less like a toy than a warning.",
+          "When a speaker crackled into life with a burst of static, Jonah jumped back so sharply that his elbow struck the gate.",
+          "Then the music stopped, and the fairground seemed to hold its breath."
+        ]
+      }
+    },
+    {
+      "id": "p1-library-q4",
+      "questionNumber": "Question 4",
+      "section": "Section A: Reading",
+      "markCategory": 20,
+      "questionType": "evaluation",
+      "assessmentObjective": "AO4",
+      "instructionsTop": "Focus this part of your answer on the second half of the source.",
+      "focusLines": "Lines 7 to the end",
+      "statement": "A student said, \"The ending is effective because it turns curiosity into danger.\"",
+      "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+      "rubric": {
+        "name": "AO4 evaluation",
+        "maxScore": 20,
+        "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+      },
+      "paper": "Paper 1",
+      "packId": "p1-library",
+      "packTitle": "The Library Stairwell",
+      "theme": "curiosity and suspense",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Library Stairwell",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "The public library had already closed when Lina noticed the light under the basement door.",
+          "Upstairs, every shelf stood in perfect shadow.",
+          "Only the returns desk glowed faintly from the streetlamp outside.",
+          "Dust drifted through the beam like ash in slow motion.",
+          "She should have gone home, but the light below seemed too deliberate to ignore.",
+          "Each stair creaked differently as she descended, as though the building were testing her step by step.",
+          "The air changed first: warmer, drier, carrying the faint smell of metal and paper glue.",
+          "Then she heard the steady turning of a page.",
+          "At the bottom of the stairwell she saw a room she had never known existed, lined with narrow cabinets and labelled boxes.",
+          "Someone sat at a desk inside, back turned, writing with a fountain pen.",
+          "Lina felt a thrill of discovery, followed immediately by the colder knowledge that she was not meant to be there.",
+          "The chair began to turn."
+        ]
+      }
+    },
+    {
+      "id": "p1-bridge-q4",
+      "questionNumber": "Question 4",
+      "section": "Section A: Reading",
+      "markCategory": 20,
+      "questionType": "evaluation",
+      "assessmentObjective": "AO4",
+      "instructionsTop": "Focus this part of your answer on the second half of the source.",
+      "focusLines": "Lines 7 to the end",
+      "statement": "A student said, \"Although the source begins with flood damage, it becomes increasingly hopeful.\"",
+      "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+      "rubric": {
+        "name": "AO4 evaluation",
+        "maxScore": 20,
+        "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+      },
+      "paper": "Paper 1",
+      "packId": "p1-bridge",
+      "packTitle": "The Bridge After the Flood",
+      "theme": "community and change",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Bridge After the Flood",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "By noon, the river had dropped enough for the old bridge to show itself again.",
+          "Its stone back rose out of the brown water like the spine of some patient animal.",
+          "Branches and plastic bottles clung to the arches.",
+          "Mud striped the handrail where the flood had reached and then withdrawn.",
+          "Nadia crossed the square carrying a broom borrowed from the caf\u00e9.",
+          "Every doorway wore the same mark of yesterday's disaster.",
+          "Shopkeepers spoke quietly as they swept, as if loud voices might call the rain back.",
+          "When Nadia stepped onto the bridge, her boots left clear prints on the wet stone.",
+          "She stopped halfway to look at the fields beyond the village, flattened and shining under a sudden patch of blue sky.",
+          "For the first time since the storm began, she imagined what the place might look like repaired.",
+          "Someone behind her started to laugh: not because anything was funny, but because the bridge was still here.",
+          "A moment later, several more voices joined in."
+        ]
+      }
+    },
+    {
+      "id": "p1-busdepot-q4",
+      "questionNumber": "Question 4",
+      "section": "Section A: Reading",
+      "markCategory": 20,
+      "questionType": "evaluation",
+      "assessmentObjective": "AO4",
+      "instructionsTop": "Focus this part of your answer on the second half of the source.",
+      "focusLines": "Lines 7 to the end",
+      "statement": "A student said, \"Imran's final decision matters because the writer makes even a small action feel important.\"",
+      "questionText": "To what extent do you agree? In your response, you could: write about your own impressions of the character or setting; evaluate how the writer has created these impressions; support your ideas with references from the text.",
+      "rubric": {
+        "name": "AO4 evaluation",
+        "maxScore": 20,
+        "notes": "Reward a clear, critical response to the statement with judgements supported by apt textual references and explanation of methods."
+      },
+      "paper": "Paper 1",
+      "packId": "p1-busdepot",
+      "packTitle": "The Winter Bus Depot",
+      "theme": "routine and decision",
+      "sourceA": {
+        "label": "Source A",
+        "title": "The Winter Bus Depot",
+        "genre": "Literature fiction (original mock)",
+        "period": "21st-century style fiction",
+        "lines": [
+          "Snow had frozen in thin ridges across the depot yard, turning tyre marks into pale grooves.",
+          "At that hour, the buses looked larger than usual, silent and blind behind frosted windows.",
+          "Orange light from the maintenance shed spread across the ground in a shallow fan.",
+          "Inside the office, a radio whispered the early news to no one.",
+          "Imran stood at the timetable board with his gloves still on.",
+          "He had checked the same cancelled route three times already, as if repetition might change the chalked word.",
+          "Behind him, a kettle clicked off.",
+          "The mechanic who usually joked through every winter morning said nothing at all.",
+          "Imran thought of the village at the end of the route, cut off again, and of the old woman who always waited with exact change and a shopping trolley.",
+          "He imagined the road under drifts, the hedges erased, the engine struggling uphill.",
+          "Then he reached for the marker pen and wrote a new departure time in the corner of the board.",
+          "It was a small act, but it felt like a promise."
+        ]
+      }
+    }
+  ]
+}
