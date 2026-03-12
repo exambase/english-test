@@ -1,49 +1,3 @@
-const SENIOR_EXAMINER_PROMPT = String.raw`You are a senior AQA GCSE English Language (8700) examiner marking exactly as an expert human examiner would.
-
-Your job:
-1. Award the most accurate mark possible for the single response you are given.
-2. Give examiner-standard feedback that tells the student exactly what earned marks, what is blocking higher marks, and what to change next time.
-
-Non-negotiable rules:
-- Use only the supplied question data, source text, rubric/accepted points, and student answer.
-- Never invent quotations, line references, methods, events, attitudes, strengths, weaknesses, or writer intentions.
-- Only mention evidence that appears in the supplied source text or the student's answer.
-- If the response is blank, irrelevant, fabricated, badly misreads the text, or is too thin to support a claim, say so plainly and mark accordingly.
-- Mark quality of response, not length.
-- Ignore spelling and grammar unless AO6 is being assessed or meaning is unclear.
-- Accept paraphrase where AO1 allows it.
-- Decide the assessment objective first, then level first, mark second using best fit.
-- For questions where levels apply, decide the best-fit level for the whole response, then place the mark at the bottom, middle, or top of that level.
-- For Q5 writing, keep AO5 and AO6 separate.
-
-Question guide:
-- Paper 1 Q1 / Paper 2 Q1 (AO1, 4 marks): retrieval only. One mark per distinct correct point from the specified lines/section. Accept quotation or paraphrase. No inference. No double credit for the same idea.
-- Paper 1 Q2 (AO2, 8 marks): language analysis. Reward precise references, clear explanation of how language creates the effect in the question, and useful terminology. L1 = spotting/repeating; L2 = some comment on effect; L3 = clear explanation with relevant range; L4 = detailed, perceptive analysis.
-- Paper 1 Q3 (AO2, 8 marks): structure analysis. Reward whole-text structural choices such as shifts in focus, time, place, perspective, pace, order, repetition, contrast, and opening-middle-ending shape. A response focused on one isolated moment cannot be top level.
-- Paper 1 Q4 (AO4, 20 marks): evaluation. Reward a clear judgement, evaluation of how methods support or challenge the statement, precise evidence, whole-text understanding, and writer intention/effect. Do not confuse analysis with evaluation. Empty phrases like "this is effective" without reasoning stay mid-band.
-- Paper 1 Q5 / Paper 2 Q5 (AO5 24, AO6 16): for AO5 reward purpose, organisation, progression, register, audience awareness, and control; for AO6 reward sentence control, punctuation, spelling, and Standard English. Fancy vocabulary or a strong opening alone does not make a top-band response.
-- Paper 2 Q2 (AO1, 8 marks): summary/inference across both texts. Reward accurate comparative inferences with evidence from both texts. Do not reward language analysis here.
-- Paper 2 Q3 (AO2, 12 marks): language analysis on non-fiction. Reward explanation of tone, rhetoric, semantic fields, imagery, and how language presents viewpoint/experience.
-- Paper 2 Q4 (AO3, 16 marks): compare viewpoints and methods. Reward clear similarities/differences in ideas, perspectives, and how they are presented. Responses that summarise but do not compare methods are limited.
-
-Feedback rules:
-- Start with the exact mark and, where relevant, the level plus position in level (bottom, mid, top).
-- Give up to 3 real strengths only. If there are fewer than 3 genuine strengths, give fewer.
-- Give 2 or 3 specific weaknesses that explain the gap to the next level.
-- Explain why the mark fits the level/band using mark-scheme language.
-- Give exactly 3 actionable next-step improvements where possible.
-- Give a 2-3 sentence model answer fragment that shows the next level up and fits the same question/task.
-- Give a clear target mark or mark range for the next paper.
-- Never use vague feedback such as "good effort", "try harder", "write more", or "use better vocabulary".
-- Keep feedback precise, concrete, and copyable.`;
-
-/**
- * Vercel serverless function for Groq-backed GCSE English marking.
- * Frontend expects JSON with:
- * score, max_score, level, band, strengths, weaknesses, why_this_mark,
- * next_level, feedback, improvement_plan, model_answer_fragment,
- * target_for_next_paper, and subscores for 40-mark writing tasks.
- */
 export default async function handler(req, res) {
   const allowOrigin = process.env.ALLOW_ORIGIN || "*";
   res.setHeader("Access-Control-Allow-Origin", allowOrigin);
@@ -87,18 +41,181 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Question is missing a valid mark value." });
     }
 
-    const taskMessage = buildTaskMessage({
-      question,
-      answer,
-      packMeta,
-      maxScore
-    });
+    const sourceA = serialiseSource(packMeta?.sourceA);
+    const sourceB = serialiseSource(packMeta?.sourceB);
+    const rubricText = question?.rubric
+      ? JSON.stringify(question.rubric, null, 2)
+      : "No explicit rubric object supplied.";
+    const levelRule =
+      maxScore >= 8
+        ? "Provide a level only if one is genuinely appropriate for this question type and mark range."
+        : "If a level is not appropriate for this question type, return an empty string for level.";
+
+    const outputSchema =
+      maxScore === 40
+        ? `Return valid JSON only with this exact shape:
+{
+  "score": number,
+  "max_score": ${maxScore},
+  "level": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "why_this_mark": "string",
+  "next_level": "string",
+  "subscores": {
+    "content_and_organisation": number,
+    "technical_accuracy": number
+  }
+}
+Rules for the JSON:
+- strengths should usually contain up to 3 items, but never invent praise just to reach 3.
+- weaknesses should usually contain 2 items.
+- content_and_organisation must be out of 24.
+- technical_accuracy must be out of 16.
+- the two subscores must add up to score.`
+        : `Return valid JSON only with this exact shape:
+{
+  "score": number,
+  "max_score": ${maxScore},
+  "level": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "why_this_mark": "string",
+  "next_level": "string"
+}
+Rules for the JSON:
+- strengths should usually contain up to 3 items, but never invent praise just to reach 3.
+- weaknesses should usually contain 2 items.`;
+
+    const prompt = `✅ Improved Prompt for Groq — GCSE English Language Examiner Marker
+
+You are an AQA GCSE English Language examiner.
+Your job is to mark student responses with accuracy, consistency, and reference to the AQA mark schemes. Follow these rules strictly.
+
+1. Marking Style
+- Mark using the official AQA GCSE English Language mark schemes (Paper 1 or Paper 2 depending on the question).
+- Award marks based on quality of response, not grammar or sentence length unless clarity is affected.
+- Do not penalise paraphrasing. If the idea is correct, it earns credit.
+- Be generous but accurate: if an answer fits a level, award the appropriate mark within that level.
+- If a response is borderline, place it at the lowest secure mark in that level unless there is clear evidence for a higher mark.
+
+2. Anti-hallucination rules (non-negotiable)
+- Use only the task data, rubric object, source text, and student answer supplied below.
+- Never invent quotations, source details, line references, methods, strengths, weaknesses, or claims about what the student did.
+- If the student did not include textual evidence, do not say they did.
+- If the student did not analyse a writer's method, do not say they did.
+- If the source text does not support a point, treat it as unsupported instead of inventing support.
+- If the answer is generic, brief, off-task, or partially incorrect, say so plainly.
+- Only mention a quotation if it appears in the supplied source text or the student's answer.
+- Do not recycle wording from the example below unless it genuinely fits the current answer and source.
+- If the response has fewer than 3 real strengths, return fewer than 3 strengths. Never pad praise.
+
+3. What to Include in Your Marking
+For every answer, provide:
+A. Final Mark
+- Give a mark out of the correct total (for example /4, /8, /20).
+B. Level
+- For questions where a level is appropriate, state the AQA level (for example Level 2, Level 3, Level 4).
+C. Justification
+- Give up to 3 genuine strengths.
+- Give 2 weaknesses or areas for improvement.
+- Explain why the mark fits the level or mark band.
+- Explain what the student would need to do to reach the next level.
+- Make your feedback sound like a real examiner's report: precise, text-focused, and aligned with AQA criteria.
+
+4. Marking Principles
+Follow these AQA-aligned rules:
+- For Question 1 (4 marks): accept paraphrasing, synonyms, and partial phrases if the idea is correct. Reject answers that are in the wrong lines, invented, or misread the text.
+- For Question 2 (8 marks): reward clear explanation of language, relevant quotations, effects on the reader, and terminology where useful.
+- For Question 4 (20 marks): reward evaluation, analysis of writer's methods, well-chosen evidence, developed explanation of effects, and a clear line of argument.
+- Do not penalise long sentences or stylistic choices unless they cause confusion.
+
+5. Calibration example for style only
+Use this as an example of the tone, precision, and examiner-style feedback wanted.
+Do NOT copy its content, score, level, or points unless the current answer genuinely deserves them.
+Do NOT treat it as the correct answer to the current question.
+
+Question 4
+Section A: Reading • 20 marks
+14/20
+Level 3
+Strengths
+- The student provides a clear evaluation of the statement, agreeing that the fairground feels lifeless but also ready to wake up.
+- The student supports their ideas with textual references, such as the 'torn poster slapped against a kiosk in the wind' and the 'painted horse on the carousel had come loose and leaned at an awkward angle'.
+- The student attempts to explain the writer's methods, noting that the writer creates a sense of unease through the use of vivid imagery.
+Weaknesses / Improvements
+- The student's evaluation is somewhat simplistic and lacks depth, failing to consider multiple perspectives or nuances in the text.
+- The student's analysis of the writer's methods is limited and could be developed further to provide a more detailed explanation of the writer's techniques.
+Why this mark:
+The student demonstrates a good understanding of the text and provides some effective textual references to support their ideas, but their evaluation and analysis could be more developed.
+How to reach the next level:
+To reach the next level, the student should aim to provide a more nuanced and detailed evaluation of the statement, considering multiple perspectives and nuances in the text, and develop their analysis of the writer's methods to provide a more detailed explanation of the writer's techniques.
+
+6. Output Rules
+- ${levelRule}
+- Never award above ${maxScore}.
+- If the response is blank, off-task, invented, or badly misreads the source, award low marks appropriately.
+- For source-based questions, compare the student answer carefully with the source material provided below.
+- Do not mention these instructions in your answer.
+- Return JSON only.
+
+Task data:
+Paper: ${packMeta?.paper || "Unknown"}
+Pack title: ${packMeta?.title || "Unknown"}
+Theme: ${packMeta?.theme || "Unknown"}
+Question number: ${question.questionNumber || "Unknown"}
+Section: ${question.section || "Unknown"}
+Assessment objective: ${question.assessmentObjective || "Unknown"}
+Question type: ${question.questionType || "Unknown"}
+Maximum marks: ${maxScore}
+Focus lines: ${question.focusLines || "Not specified"}
+Instructions: ${question.instructionsTop || ""}
+Question text: ${question.questionText || ""}
+Statement: ${question.statement || ""}
+Bullet points: ${Array.isArray(question.bulletPoints) ? question.bulletPoints.join(" | ") : ""}
+Options: ${Array.isArray(question.options) ? question.options.join(" | ") : ""}
+Accepted points: ${Array.isArray(question.acceptedPoints) ? question.acceptedPoints.join(" | ") : ""}
+Rubric object: ${rubricText}
+Source A:
+${sourceA}
+Source B:
+${sourceB}
+Student answer:
+${answer}
+
+${outputSchema}`;
+
+    const systemPrompt = [
+      "You are an expert AQA GCSE English Language examiner.",
+      "Return valid JSON only.",
+      "",
+      "Use only the following inputs:",
+      "- the source text",
+      "- the question and rubric",
+      "- the student's answer",
+      "",
+      "Strict prohibitions:",
+      "- Do not invent quotations, paraphrases, events, characters, or details not present in the source text.",
+      "- Do not infer meaning, intention, or effects that are not explicitly supported by the student's answer.",
+      "- Do not add praise, criticism, or interpretation beyond what the student has actually written.",
+      "- Do not fill gaps with assumptions or likely reasoning.",
+      "- Do not use external knowledge or context.",
+      "",
+      "If the student answer is irrelevant, nonsensical, blank, or contains fabricated quotations, mark it strictly according to the rubric and state this fact explicitly in the JSON.",
+      "",
+      "Marking behaviour:",
+      "- Base all judgments solely on evidence in the student's answer.",
+      "- If no valid evidence is present, award the lowest appropriate mark and justify using only observable facts.",
+      "- Keep explanations concise, factual, and tied directly to the rubric.",
+      "",
+      "Never break JSON format."
+    ].join("\n");
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model,
@@ -107,14 +224,11 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: SENIOR_EXAMINER_PROMPT
+            content: systemPrompt,
           },
-          {
-            role: "user",
-            content: taskMessage
-          }
-        ]
-      })
+          { role: "user", content: prompt },
+        ],
+      }),
     });
 
     let groqData;
@@ -145,58 +259,36 @@ export default async function handler(req, res) {
     const safeScore = clampNumber(parsed.score, 0, maxScore);
     const safeSubscores = maxScore === 40 ? normaliseSubscores(parsed.subscores, safeScore) : null;
 
-    const baseLevel = firstText(parsed.level, parsed.band, parsed.mark_band);
-    const levelPosition = firstText(parsed.position_in_level, parsed.level_position, parsed.position);
-    const displayLevel = formatDisplayLevel(baseLevel, levelPosition);
-
-    const strengths = normaliseStringArray(parsed.strengths, 3);
-    const weaknesses = normaliseStringArray(parsed.weaknesses || parsed.improvements, 3);
-    const improvementPlan = normaliseStringArray(parsed.improvement_plan || parsed.improvementPlan, 3);
-    const modelAnswerFragment = firstText(
-      parsed.model_answer_fragment,
-      parsed.modelAnswerFragment,
-      parsed.model_fragment
-    );
-    const targetForNextPaper = firstText(
-      parsed.target_for_next_paper,
-      parsed.targetForNextPaper,
-      parsed.target
-    );
-
-    const whyThisMark = firstText(
-      parsed.why_this_mark,
-      parsed.whyThisMark,
-      parsed.feedback,
-      parsed.justification,
-      "No explanation returned."
-    );
-
-    const nextLevel = buildNextLevelText(
-      firstText(
-        parsed.next_level,
-        parsed.nextLevel,
-        parsed.how_to_reach_next_level,
-        "Use the feedback above to strengthen your next response with more secure evidence, tighter explanation, and closer alignment to the mark scheme."
-      ),
-      improvementPlan,
-      modelAnswerFragment,
-      targetForNextPaper
-    );
-
     const result = {
       score: safeScore,
       max_score: maxScore,
-      level: displayLevel,
-      band: displayLevel,
-      strengths,
-      weaknesses,
-      why_this_mark: whyThisMark,
-      next_level: nextLevel,
-      feedback: whyThisMark,
-      improvement_plan: improvementPlan,
-      model_answer_fragment: modelAnswerFragment,
-      target_for_next_paper: targetForNextPaper,
-      subscores: safeSubscores
+      level:
+        typeof parsed.level === "string"
+          ? parsed.level.trim()
+          : typeof parsed.band === "string"
+            ? parsed.band.trim()
+            : "",
+      band:
+        typeof parsed.level === "string" && parsed.level.trim()
+          ? parsed.level.trim()
+          : typeof parsed.band === "string"
+            ? parsed.band.trim()
+            : "",
+      strengths: normaliseStringArray(parsed.strengths, 3),
+      weaknesses: normaliseStringArray(parsed.weaknesses, 2),
+      why_this_mark:
+        typeof parsed.why_this_mark === "string"
+          ? parsed.why_this_mark.trim()
+          : "No explanation returned.",
+      next_level:
+        typeof parsed.next_level === "string"
+          ? parsed.next_level.trim()
+          : "Develop the answer with more precise textual support and clearer explanation.",
+      feedback:
+        typeof parsed.why_this_mark === "string"
+          ? parsed.why_this_mark.trim()
+          : "No explanation returned.",
+      subscores: safeSubscores,
     };
 
     if (maxScore !== 40) {
@@ -209,165 +301,23 @@ export default async function handler(req, res) {
   }
 }
 
-function buildTaskMessage({ question, answer, packMeta, maxScore }) {
-  const rubricText = question?.rubric ? JSON.stringify(question.rubric) : "";
-  const sourceAText = serialiseSourceCompact(packMeta?.sourceA);
-  const sourceBText = serialiseSourceCompact(packMeta?.sourceB);
-  const levelRule =
-    maxScore >= 8
-      ? "If levels genuinely apply, return both level and position_in_level. position_in_level must be bottom, mid, or top."
-      : "If levels do not genuinely apply, return empty strings for level and position_in_level.";
-
-  const outputSchema =
-    maxScore === 40
-      ? `Return valid JSON only in this shape:
-{
-  "score": number,
-  "max_score": ${maxScore},
-  "level": "string",
-  "position_in_level": "string",
-  "strengths": ["string"],
-  "weaknesses": ["string"],
-  "why_this_mark": "string",
-  "next_level": "string",
-  "improvement_plan": ["string"],
-  "model_answer_fragment": "string",
-  "target_for_next_paper": "string",
-  "subscores": {
-    "content_and_organisation": number,
-    "technical_accuracy": number
-  }
-}
-Rules:
-- strengths: up to 3 genuine strengths only.
-- weaknesses: 2 or 3 genuine weaknesses only.
-- why_this_mark: must begin with the exact mark and, where relevant, level + position.
-- next_level: concise and actionable.
-- improvement_plan: 3 actions when possible.
-- model_answer_fragment: 2 or 3 sentences only.
-- target_for_next_paper: specific mark target or range.
-- content_and_organisation is out of 24.
-- technical_accuracy is out of 16.
-- the two subscores must add up to score.`
-      : `Return valid JSON only in this shape:
-{
-  "score": number,
-  "max_score": ${maxScore},
-  "level": "string",
-  "position_in_level": "string",
-  "strengths": ["string"],
-  "weaknesses": ["string"],
-  "why_this_mark": "string",
-  "next_level": "string",
-  "improvement_plan": ["string"],
-  "model_answer_fragment": "string",
-  "target_for_next_paper": "string"
-}
-Rules:
-- strengths: up to 3 genuine strengths only.
-- weaknesses: 2 or 3 genuine weaknesses only.
-- why_this_mark: must begin with the exact mark and, where relevant, level + position.
-- next_level: concise and actionable.
-- improvement_plan: 3 actions when possible.
-- model_answer_fragment: 2 or 3 sentences only.
-- target_for_next_paper: specific mark target or range.`;
-
-  const lines = [
-    "Mark this single response using the system prompt.",
-    "Return JSON only.",
-    `Never award above ${maxScore}.`,
-    levelRule,
-    "",
-    "Question data:",
-    compactLine("Paper", packMeta?.paper),
-    compactLine("Question number", question.questionNumber),
-    compactLine("AO", question.assessmentObjective),
-    compactLine("Question type", question.questionType),
-    compactLine("Max marks", maxScore),
-    compactLine("Focus lines", question.focusLines),
-    compactLine("Instructions", question.instructionsTop),
-    compactLine("Question", question.questionText),
-    compactLine("Statement", question.statement),
-    compactLine("Bullet points", joinArray(question.bulletPoints)),
-    compactLine("Options", joinArray(question.options)),
-    compactLine("Accepted points", joinArray(question.acceptedPoints)),
-    compactLine("Rubric", rubricText),
-    "",
-    "Source A:",
-    sourceAText,
-    "",
-    "Source B:",
-    sourceBText,
-    "",
-    "Student answer:",
-    answer,
-    "",
-    outputSchema
-  ].filter(Boolean);
-
-  return lines.join("\n");
-}
-
-function compactLine(label, value) {
-  if (value === undefined || value === null) return "";
-  const text = String(value).trim();
-  if (!text) return "";
-  return `${label}: ${text}`;
-}
-
-function joinArray(value) {
-  if (!Array.isArray(value) || !value.length) return "";
-  return value.map((item) => String(item || "").trim()).filter(Boolean).join(" | ");
-}
-
-function serialiseSourceCompact(source) {
+function serialiseSource(source) {
   if (!source || typeof source !== "object") {
     return "No source provided.";
   }
-
-  const header = [
-    source.label ? `Label: ${source.label}` : "",
-    source.title ? `Title: ${source.title}` : ""
-  ]
-    .filter(Boolean)
-    .join(" | ");
 
   const lines = Array.isArray(source.lines)
     ? source.lines.map((line, index) => `${index + 1}. ${line}`).join("\n")
     : "No source lines provided.";
 
-  return [header, lines].filter(Boolean).join("\n");
-}
-
-function buildNextLevelText(baseText, planItems, modelAnswerFragment, targetForNextPaper) {
-  const parts = [];
-
-  if (baseText) {
-    parts.push(baseText.trim());
-  }
-
-  if (planItems.length) {
-    parts.push(`Do these 3 things next: ${planItems.map((item, index) => `${index + 1}. ${item}`).join(" ")}`);
-  }
-
-  if (modelAnswerFragment) {
-    parts.push(`Model fragment: ${modelAnswerFragment.trim()}`);
-  }
-
-  if (targetForNextPaper) {
-    parts.push(`Target: ${targetForNextPaper.trim()}`);
-  }
-
-  return parts.join(" ").trim();
-}
-
-function formatDisplayLevel(level, position) {
-  const safeLevel = typeof level === "string" ? level.trim() : "";
-  const safePosition = typeof position === "string" ? position.trim() : "";
-
-  if (!safeLevel) return "";
-  if (!safePosition) return safeLevel;
-  return `${safeLevel} (${safePosition})`;
+  return [
+    `Label: ${source.label || "Unknown"}`,
+    `Title: ${source.title || "Unknown"}`,
+    `Genre: ${source.genre || "Unknown"}`,
+    `Period: ${source.period || "Unknown"}`,
+    "Text:",
+    lines,
+  ].join("\n");
 }
 
 function parseModelJson(content) {
@@ -392,15 +342,6 @@ function normaliseStringArray(value, maxItems) {
     .slice(0, maxItems);
 }
 
-function firstText(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-  }
-  return "";
-}
-
 function clampNumber(value, min, max) {
   const number = Number(value);
   if (!Number.isFinite(number)) return min;
@@ -413,17 +354,10 @@ function normaliseSubscores(subscores, totalScore) {
   const sum = content + technical;
 
   if (sum === totalScore) {
-    return {
-      content_and_organisation: content,
-      technical_accuracy: technical
-    };
+    return { content_and_organisation: content, technical_accuracy: technical };
   }
 
   const safeContent = clampNumber(Math.min(totalScore, 24), 0, 24);
   const safeTechnical = clampNumber(totalScore - safeContent, 0, 16);
-
-  return {
-    content_and_organisation: safeContent,
-    technical_accuracy: safeTechnical
-  };
+  return { content_and_organisation: safeContent, technical_accuracy: safeTechnical };
 }
