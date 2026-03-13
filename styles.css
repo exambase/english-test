@@ -457,3 +457,49 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+.result-inline-notice {
+  margin-bottom: 14px;
+}
+
+.result-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-pill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.status-pill.ok {
+  background: #edf8f2;
+  color: var(--success);
+}
+
+.status-pill.blank {
+  background: #f5efe3;
+  color: #7b5a1d;
+}
+
+.status-pill.error {
+  background: #fff1f1;
+  color: var(--error);
+}
+
+.result-card-actions {
+  align-items: center;
+  margin-top: 14px;
+}
+
+.retry-btn {
+  padding: 8px 14px;
+}
+
+.attempt-note {
+  font-size: 0.92rem;
+}
