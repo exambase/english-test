@@ -33,7 +33,8 @@ const PAPER_MODES = [
       "Question 4": {
         markCategory: 20,
         rubricMaxScore: 20,
-        rubricNotes: "Adapted for this part-based quiz. Reward a clear, comparative response with supported judgements and explanation of how methods present viewpoints. Mark out of 20 for this site layout."
+        rubricNotes:
+          "Adapted for this part-based quiz. Reward a clear, comparative response with supported judgements and explanation of how methods present viewpoints. Mark out of 20 for this site layout."
       }
     }
   },
@@ -47,7 +48,8 @@ const PAPER_MODES = [
       "Question 3": {
         markCategory: 8,
         rubricMaxScore: 8,
-        rubricNotes: "Adapted for this part-based quiz. Reward concise, relevant language analysis linked to viewpoint and effect. Mark out of 8 for this site layout."
+        rubricNotes:
+          "Adapted for this part-based quiz. Reward concise, relevant language analysis linked to viewpoint and effect. Mark out of 8 for this site layout."
       }
     }
   }
@@ -63,7 +65,12 @@ const state = {
   markerEndpoint: MARKER_ENDPOINT,
   answers: {},
   lastCopyText: "",
-  lastResults: []
+  lastResults: [],
+  notice: {
+    message: "Marked work will appear here.",
+    isError: false
+  },
+  busyTask: null
 };
 
 const dom = {
@@ -85,12 +92,16 @@ async function init() {
   if (dom.paperMode) {
     dom.paperMode.value = state.paperMode;
   }
+  syncToolbarButtons();
+  renderResultWindow();
   await loadBank();
 }
 
 function populatePaperModeOptions() {
   if (!dom.paperMode) return;
-  dom.paperMode.innerHTML = PAPER_MODES.map((mode) => `<option value="${escapeHtml(mode.id)}">${escapeHtml(mode.id)}</option>`).join("");
+  dom.paperMode.innerHTML = PAPER_MODES.map(
+    (mode) => `<option value="${escapeHtml(mode.id)}">${escapeHtml(mode.id)}</option>`
+  ).join("");
 }
 
 function bindStaticEvents() {
@@ -100,7 +111,7 @@ function bindStaticEvents() {
   });
 
   dom.generatePaperBtn.addEventListener("click", () => {
-    if (!state.bank) return;
+    if (!state.bank || state.busyTask) return;
     generatePaper(state.paperMode);
   });
 
@@ -108,23 +119,30 @@ function bindStaticEvents() {
   dom.markPaperBtn.addEventListener("click", markCurrentPaper);
 
   dom.copyFeedbackBtn.addEventListener("click", async () => {
-    if (!state.lastCopyText) return;
+    if (!state.lastCopyText || state.busyTask) return;
     try {
       await navigator.clipboard.writeText(state.lastCopyText);
-      showNotice("Feedback copied to clipboard.");
+      setNotice("Feedback copied to clipboard.");
     } catch {
-      showNotice("Clipboard copy failed. You may need to allow clipboard access.", true);
+      setNotice("Clipboard copy failed. You may need to allow clipboard access.", true);
     }
+    renderResultWindow();
   });
 
   dom.paperView.addEventListener("input", handleAnswerInput);
   dom.paperView.addEventListener("change", handleAnswerInput);
+  dom.resultWindow.addEventListener("click", handleResultWindowClick);
 }
 
 async function loadBank() {
   const fetched = await fetchBankWithFallback();
 
   if (!fetched) {
+    state.notice = {
+      message: "The paper bank could not be loaded.",
+      isError: true
+    };
+    renderResultWindow();
     dom.paperView.innerHTML = `<div class="notice error">The paper bank could not be loaded.</div>`;
     return;
   }
@@ -174,6 +192,11 @@ function generatePaper(requestedMode) {
 
   if (!candidates.length) {
     dom.paperView.innerHTML = `<div class="notice error">No quiz packs are available for ${escapeHtml(mode.id)}.</div>`;
+    setNotice(`No quiz packs are available for ${mode.id}.`, true);
+    state.lastResults = [];
+    state.lastCopyText = "";
+    syncToolbarButtons();
+    renderResultWindow();
     return;
   }
 
@@ -184,9 +207,10 @@ function generatePaper(requestedMode) {
   state.answers = loadSavedAnswers(displayPack.id);
   state.lastCopyText = "";
   state.lastResults = [];
-  dom.copyFeedbackBtn.disabled = true;
+  setNotice("This quiz is ready. When the student has answered the questions, click Mark this paper.");
   renderPaper();
-  dom.resultWindow.innerHTML = `<p class="muted">This quiz is ready. When the student has answered the questions, click <strong>Mark this paper</strong>.</p>`;
+  syncToolbarButtons();
+  renderResultWindow();
 }
 
 function chooseDifferentRandomPack(candidates, previousId) {
@@ -469,81 +493,177 @@ function loadSavedAnswers(packId) {
 }
 
 function clearCurrentAnswers() {
-  if (!state.currentPack) return;
+  if (!state.currentPack || state.busyTask) return;
   state.answers = {};
   localStorage.removeItem(ANSWER_STORAGE_PREFIX + state.currentPack.id);
   renderPaper();
-  dom.resultWindow.innerHTML = `<p class="muted">All answer boxes for this paper have been cleared.</p>`;
   state.lastCopyText = "";
   state.lastResults = [];
-  dom.copyFeedbackBtn.disabled = true;
+  setNotice("All answer boxes for this paper have been cleared.");
+  syncToolbarButtons();
+  renderResultWindow();
 }
 
 async function markCurrentPaper() {
   const pack = state.currentPack;
   if (!pack) {
-    showNotice("No paper has been generated yet.", true);
+    setNotice("No paper has been generated yet.", true);
+    renderResultWindow();
     return;
   }
 
   const endpoint = state.markerEndpoint;
   if (!endpoint) {
-    showNotice("The marker is not configured in the page code.", true);
+    setNotice("The marker is not configured in the page code.", true);
+    renderResultWindow();
     return;
   }
 
-  dom.markPaperBtn.disabled = true;
-  dom.markPaperBtn.textContent = "Marking paper…";
-  dom.copyFeedbackBtn.disabled = true;
+  if (state.busyTask) return;
+
+  state.busyTask = { type: "full" };
+  state.lastResults = [];
+  state.lastCopyText = "";
+  setNotice(`Marking ${pack.questions.length} question${pack.questions.length === 1 ? "" : "s"}…`);
+  syncToolbarButtons();
+  renderResultWindow();
 
   const results = [];
-  let runningTotal = 0;
-  const maxTotal = pack.questions.reduce((sum, question) => sum + Number(question.markCategory || 0), 0);
 
   for (let index = 0; index < pack.questions.length; index += 1) {
     const question = pack.questions[index];
-    const answer = normaliseAnswerForSending(question, state.answers[question.id]);
+    const entry = await markSingleQuestion(question, pack, null);
+    results.push(entry);
+    state.lastResults = results.slice();
 
-    showNotice(`Marking ${question.questionNumber} (${index + 1} of ${pack.questions.length})…`);
-
-    if (!answer) {
-      const blankResult = buildBlankResult(question);
-      results.push({ question, result: blankResult });
-      renderLiveProgress(results, runningTotal, maxTotal);
-      continue;
+    if (entry.status === "error") {
+      setNotice(
+        `${question.questionNumber} was not marked. The rest of the paper is still being processed.`,
+        true
+      );
+    } else {
+      setNotice(`Marked ${question.questionNumber} (${index + 1} of ${pack.questions.length}).`);
     }
 
-    try {
-      const result = question.questionType === "select-true-statements"
-        ? markTrueStatementsLocally(question, answer)
-        : await sendForMarking(endpoint, question, answer, pack);
-
-      runningTotal += Number(result.score || 0);
-      results.push({ question, result });
-      renderLiveProgress(results, runningTotal, maxTotal);
-    } catch (error) {
-      const failedResult = {
-        score: 0,
-        max_score: Number(question.markCategory || 0),
-        level: "Error",
-        strengths: [],
-        weaknesses: ["The marking service did not return a usable result."],
-        why_this_mark: error?.message || "This question could not be marked.",
-        next_level: "Try marking the paper again in a moment.",
-        feedback: error?.message || "This question could not be marked.",
-        subscores: question.markCategory === 40 ? { content_and_organisation: 0, technical_accuracy: 0 } : null
-      };
-      results.push({ question, result: failedResult });
-      renderLiveProgress(results, runningTotal, maxTotal);
-    }
+    renderResultWindow();
   }
 
   state.lastResults = results;
-  renderResultWindow(pack, results);
   state.lastCopyText = buildCopyText(pack, results);
-  dom.copyFeedbackBtn.disabled = false;
-  dom.markPaperBtn.disabled = false;
-  dom.markPaperBtn.textContent = "Mark this paper";
+  state.busyTask = null;
+
+  const retryCount = countRetryableQuestions(results);
+  if (retryCount) {
+    setNotice(
+      `${retryCount} question${retryCount === 1 ? " still needs" : "s still need"} retry. Use Mark again on the affected card${retryCount === 1 ? "" : "s"}.`,
+      true
+    );
+  } else {
+    setNotice("All questions marked. You can copy the full feedback now.");
+  }
+
+  syncToolbarButtons();
+  renderResultWindow();
+}
+
+async function markSingleQuestion(question, pack, previousEntry) {
+  const answer = normaliseAnswerForSending(question, state.answers[question.id]);
+  const attemptCount = Number(previousEntry?.attemptCount || 0) + 1;
+
+  if (!answer) {
+    return buildResultEntry(question, buildBlankResult(question), {
+      status: "blank",
+      attemptCount
+    });
+  }
+
+  try {
+    const result = question.questionType === "select-true-statements"
+      ? markTrueStatementsLocally(question, answer)
+      : await sendForMarking(state.markerEndpoint, question, answer, pack);
+
+    return buildResultEntry(question, result, {
+      status: "marked",
+      attemptCount
+    });
+  } catch (error) {
+    return buildResultEntry(question, buildFailedResult(question, error), {
+      status: "error",
+      attemptCount,
+      errorMessage: error?.message || "This question could not be marked."
+    });
+  }
+}
+
+function buildResultEntry(question, result, meta = {}) {
+  return {
+    question,
+    result,
+    status: meta.status || "marked",
+    attemptCount: Number(meta.attemptCount || 1),
+    errorMessage: meta.errorMessage || ""
+  };
+}
+
+async function remarkQuestion(questionId) {
+  if (!state.currentPack || state.busyTask) return;
+
+  const question = state.currentPack.questions.find((item) => item.id === questionId);
+  if (!question) return;
+
+  const existingIndex = state.lastResults.findIndex((entry) => entry.question.id === questionId);
+  const previousEntry = existingIndex >= 0 ? state.lastResults[existingIndex] : null;
+
+  state.busyTask = {
+    type: "retry",
+    questionId
+  };
+  setNotice(`Marking ${question.questionNumber} again…`);
+  syncToolbarButtons();
+  renderResultWindow();
+
+  const updatedEntry = await markSingleQuestion(question, state.currentPack, previousEntry);
+
+  if (existingIndex >= 0) {
+    state.lastResults.splice(existingIndex, 1, updatedEntry);
+  } else {
+    state.lastResults.push(updatedEntry);
+  }
+
+  state.lastCopyText = buildCopyText(state.currentPack, state.lastResults);
+  state.busyTask = null;
+
+  if (updatedEntry.status === "error") {
+    setNotice(
+      `${question.questionNumber} still could not be marked. Wait a few seconds and click Mark again for that question.`,
+      true
+    );
+  } else if (updatedEntry.status === "blank") {
+    setNotice(
+      `${question.questionNumber} is still blank. Add an answer, then click Mark again for that question.`
+    );
+  } else {
+    const remainingRetryCount = countRetryableQuestions(state.lastResults);
+    if (remainingRetryCount) {
+      setNotice(
+        `${question.questionNumber} was marked again successfully. ${remainingRetryCount} question${remainingRetryCount === 1 ? " still needs" : "s still need"} retry.`,
+        true
+      );
+    } else {
+      setNotice(`${question.questionNumber} was marked again successfully.`);
+    }
+  }
+
+  syncToolbarButtons();
+  renderResultWindow();
+}
+
+function handleResultWindowClick(event) {
+  const button = event.target.closest("[data-action='remark-question']");
+  if (!button) return;
+  const questionId = button.dataset.questionId;
+  if (!questionId) return;
+  remarkQuestion(questionId);
 }
 
 function buildBlankResult(question) {
@@ -554,26 +674,240 @@ function buildBlankResult(question) {
   return {
     score: 0,
     max_score: Number(question.markCategory || 0),
-    level: "0",
+    level: "No response",
     strengths: [],
     weaknesses: [
       "No answer was provided.",
       "There is no evidence or explanation to reward."
     ],
     why_this_mark: "This response is blank, so it cannot be credited.",
-    next_level: "Attempt the question and include clear points supported by the source or task.",
+    next_level: "Write an answer for this question, then click Mark again on this card.",
     feedback: "This response is blank, so it cannot be credited.",
     subscores
   };
 }
 
-function renderLiveProgress(results, runningTotal, maxTotal) {
+function buildFailedResult(question, error) {
+  const rawMessage = String(error?.message || "This question could not be marked.").trim();
+  const isRateLimit = /rate|limit|quota|429|upgrade/i.test(rawMessage);
+  const errorMessage = isRateLimit
+    ? `This question was not marked because the API limit was reached. ${rawMessage}`
+    : rawMessage;
+
+  return {
+    score: 0,
+    max_score: Number(question.markCategory || 0),
+    level: "Not marked",
+    strengths: [],
+    weaknesses: [
+      isRateLimit
+        ? "The API rate limit was reached before this question could be marked."
+        : "The marking service did not return a usable result."
+    ],
+    why_this_mark: errorMessage,
+    next_level: isRateLimit
+      ? "Wait a few seconds, then click Mark again for this question only."
+      : "Click Mark again for this question to retry the request.",
+    feedback: errorMessage,
+    subscores: question.markCategory === 40
+      ? { content_and_organisation: 0, technical_accuracy: 0 }
+      : null
+  };
+}
+
+function computeResultTotals(results) {
+  return results.reduce(
+    (totals, entry) => {
+      totals.score += Number(entry.result.score || 0);
+      totals.max += Number(entry.result.max_score || entry.question.markCategory || 0);
+      return totals;
+    },
+    { score: 0, max: 0 }
+  );
+}
+
+function countRetryableQuestions(results) {
+  return results.filter((entry) => entry.status === "error").length;
+}
+
+function renderResultWindow() {
+  const pack = state.currentPack;
+  const results = Array.isArray(state.lastResults) ? state.lastResults : [];
+  const noticeHtml = renderNoticeHtml();
+
+  if (!pack || !results.length) {
+    dom.resultWindow.innerHTML = `
+      ${noticeHtml}
+      <p class="muted">Marked work will appear here.</p>
+    `;
+    return;
+  }
+
+  const totals = computeResultTotals(results);
+  const retryCount = countRetryableQuestions(results);
+  const totalQuestions = pack.questions.length;
+
+  let summaryLine = `${results.length} question${results.length === 1 ? "" : "s"} marked.`;
+  if (state.busyTask?.type === "full") {
+    summaryLine = `Marked ${results.length} of ${totalQuestions} question${totalQuestions === 1 ? "" : "s"} so far.`;
+  } else if (retryCount) {
+    const completed = results.length - retryCount;
+    summaryLine = `${completed} marked, ${retryCount} waiting for retry.`;
+  }
+
   dom.resultWindow.innerHTML = `
+    ${noticeHtml}
     <div class="result-summary">
-      <div class="result-total">${escapeHtml(String(runningTotal))}/${escapeHtml(String(maxTotal))}</div>
-      <div class="muted">Marked ${escapeHtml(String(results.length))} question(s) so far.</div>
+      <div class="result-total">${escapeHtml(String(totals.score))}/${escapeHtml(String(totals.max))}</div>
+      <div>
+        <strong>${escapeHtml(pack.paper)}</strong><br />
+        <span class="muted">${escapeHtml(summaryLine)}</span>
+      </div>
+    </div>
+    <div class="result-list">
+      ${results.map(renderResultCard).join("")}
     </div>
   `;
+}
+
+function renderResultCard(entry) {
+  const { question, result, status, attemptCount } = entry;
+  const strengths = Array.isArray(result.strengths) ? result.strengths.filter(Boolean) : [];
+  const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses.filter(Boolean) : [];
+  const subscores = result.subscores && typeof result.subscores === "object" ? result.subscores : null;
+  const isRetrying = state.busyTask?.type === "retry" && state.busyTask.questionId === question.id;
+  const retryDisabled = Boolean(state.busyTask);
+
+  return `
+    <article class="result-card">
+      <div class="result-card-head">
+        <div>
+          <strong>${escapeHtml(question.questionNumber)}</strong>
+          <div class="muted">${escapeHtml(question.section)} • ${escapeHtml(String(question.markCategory))} marks</div>
+        </div>
+        <div class="question-score">${escapeHtml(String(result.score))}/${escapeHtml(String(result.max_score))}</div>
+      </div>
+      <div class="badge-row result-badge-row">
+        ${result.level ? `<span class="badge">${escapeHtml(result.level)}</span>` : ""}
+        ${renderStatusPill(status)}
+      </div>
+      ${subscores ? `
+        <div class="subscore-box">
+          <div><strong>Content and organisation:</strong> ${escapeHtml(String(subscores.content_and_organisation ?? 0))}</div>
+          <div><strong>Technical accuracy:</strong> ${escapeHtml(String(subscores.technical_accuracy ?? 0))}</div>
+        </div>
+      ` : ""}
+      ${strengths.length ? `
+        <div>
+          <strong>Strengths</strong>
+          <ul class="breakdown-list">${strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+      ` : ""}
+      ${weaknesses.length ? `
+        <div>
+          <strong>Weaknesses / Improvements</strong>
+          <ul class="breakdown-list">${weaknesses.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+      ` : ""}
+      <p class="question-text"><strong>Why this mark:</strong> ${escapeHtml(result.why_this_mark || "No explanation returned.")}</p>
+      <p class="question-text"><strong>How to reach the next level:</strong> ${escapeHtml(result.next_level || "Develop the answer further with precise textual support and more detailed explanation.")}</p>
+      <div class="result-card-actions button-row">
+        <button
+          type="button"
+          class="ghost-btn retry-btn"
+          data-action="remark-question"
+          data-question-id="${escapeHtml(question.id)}"
+          ${retryDisabled ? "disabled" : ""}
+        >${isRetrying ? "Marking again…" : "Mark again"}</button>
+        <span class="attempt-note muted">Attempts: ${escapeHtml(String(attemptCount || 1))}</span>
+      </div>
+    </article>
+  `;
+}
+
+function renderStatusPill(status) {
+  if (status === "error") {
+    return `<span class="status-pill error">Needs retry</span>`;
+  }
+  if (status === "blank") {
+    return `<span class="status-pill blank">Blank</span>`;
+  }
+  return `<span class="status-pill ok">Marked</span>`;
+}
+
+function buildCopyText(pack, results) {
+  const totals = computeResultTotals(results);
+
+  const lines = [
+    "AQA GCSE English Language Practice Quiz Marker",
+    `${pack.paper}`,
+    `Total score: ${totals.score}/${totals.max}`,
+    ""
+  ];
+
+  results.forEach((entry) => {
+    const { question, result, status, attemptCount } = entry;
+    lines.push(`${question.questionNumber} (${question.markCategory} marks)`);
+    lines.push(`Score: ${result.score}/${result.max_score}`);
+    if (result.level) {
+      lines.push(`Level: ${result.level}`);
+    }
+    if (status === "error") {
+      lines.push("Status: Not marked yet - use Mark again on this question.");
+    } else if (status === "blank") {
+      lines.push("Status: Blank response.");
+    } else {
+      lines.push("Status: Marked.");
+    }
+    lines.push(`Attempts: ${attemptCount || 1}`);
+    if (result.subscores) {
+      lines.push(`Content and organisation: ${result.subscores.content_and_organisation ?? 0}`);
+      lines.push(`Technical accuracy: ${result.subscores.technical_accuracy ?? 0}`);
+    }
+    if (Array.isArray(result.strengths) && result.strengths.length) {
+      lines.push("Strengths:");
+      result.strengths.forEach((item) => lines.push(`- ${item}`));
+    }
+    if (Array.isArray(result.weaknesses) && result.weaknesses.length) {
+      lines.push("Weaknesses / Improvements:");
+      result.weaknesses.forEach((item) => lines.push(`- ${item}`));
+    }
+    lines.push(`Why this mark: ${result.why_this_mark || ""}`);
+    lines.push(`How to reach the next level: ${result.next_level || ""}`);
+    lines.push("");
+  });
+
+  return lines.join("\n");
+}
+
+function renderNoticeHtml() {
+  if (!state.notice?.message) return "";
+  return `<div class="notice result-inline-notice${state.notice.isError ? " error" : ""}">${escapeHtml(state.notice.message)}</div>`;
+}
+
+function setNotice(message, isError = false) {
+  state.notice = {
+    message,
+    isError
+  };
+}
+
+function syncToolbarButtons() {
+  const busy = state.busyTask;
+
+  dom.markPaperBtn.disabled = Boolean(busy);
+  dom.generatePaperBtn.disabled = Boolean(busy);
+  dom.clearAnswersBtn.disabled = Boolean(busy);
+
+  if (busy?.type === "full") {
+    dom.markPaperBtn.textContent = "Marking paper…";
+  } else if (busy?.type === "retry") {
+    dom.markPaperBtn.textContent = "Please wait…";
+  } else {
+    dom.markPaperBtn.textContent = "Mark this paper";
+  }
+
+  dom.copyFeedbackBtn.disabled = Boolean(busy) || !state.lastCopyText;
 }
 
 async function sendForMarking(endpoint, question, answer, pack) {
@@ -617,7 +951,12 @@ function normaliseRemoteResult(data, question) {
   const strengths = normaliseStringArray(data.strengths, 3);
   const weaknesses = normaliseStringArray(data.weaknesses || data.improvements, 2);
   const whyThisMark = firstText(data.why_this_mark, data.whyThisMark, data.feedback, "No explanation returned.");
-  const nextLevel = firstText(data.next_level, data.nextLevel, data.how_to_reach_next_level, "Develop the answer further with precise references and more detailed explanation.");
+  const nextLevel = firstText(
+    data.next_level,
+    data.nextLevel,
+    data.how_to_reach_next_level,
+    "Develop the answer further with precise references and more detailed explanation."
+  );
   const subscores = data.subscores && typeof data.subscores === "object"
     ? {
         content_and_organisation: Number(data.subscores.content_and_organisation ?? 0),
@@ -690,15 +1029,18 @@ function markTrueStatementsLocally(question, answer) {
     level: score === 4 ? "Full marks" : score >= 2 ? "Partial" : score >= 1 ? "Limited" : "0",
     strengths,
     weaknesses,
-    why_this_mark: score === 4
-      ? "All four correct statements were selected, so this response gains full marks."
-      : `You selected ${score} correct statement${score === 1 ? "" : "s"}, so the mark reflects the number of statements supported by the text.`,
-    next_level: score === 4
-      ? "Keep checking each statement carefully against the wording of the source."
-      : "Compare each statement closely with the wording of the source and only tick statements that are directly supported.",
-    feedback: score === 4
-      ? "All four correct statements were selected, so this response gains full marks."
-      : `You selected ${score} correct statement${score === 1 ? "" : "s"}. Check each statement more carefully against the source.`,
+    why_this_mark:
+      score === 4
+        ? "All four correct statements were selected, so this response gains full marks."
+        : `You selected ${score} correct statement${score === 1 ? "" : "s"}, so the mark reflects the number of statements supported by the text.`,
+    next_level:
+      score === 4
+        ? "Keep checking each statement carefully against the wording of the source."
+        : "Compare each statement closely with the wording of the source and only tick statements that are directly supported.",
+    feedback:
+      score === 4
+        ? "All four correct statements were selected, so this response gains full marks."
+        : `You selected ${score} correct statement${score === 1 ? "" : "s"}. Check each statement more carefully against the source.`,
     subscores: null
   };
 }
@@ -709,104 +1051,6 @@ function normaliseAnswerForSending(question, rawValue) {
     return values.join(", ").trim();
   }
   return String(rawValue || "").trim();
-}
-
-function renderResultWindow(pack, results) {
-  const total = results.reduce((sum, item) => sum + Number(item.result.score || 0), 0);
-  const maxTotal = results.reduce((sum, item) => sum + Number(item.result.max_score || item.question.markCategory || 0), 0);
-
-  dom.resultWindow.innerHTML = `
-    <div class="result-summary">
-      <div class="result-total">${escapeHtml(String(total))}/${escapeHtml(String(maxTotal))}</div>
-      <div>
-        <strong>${escapeHtml(pack.paper)}</strong><br />
-        <span class="muted">${escapeHtml(String(results.length))} questions marked</span>
-      </div>
-    </div>
-    <div class="result-list">
-      ${results.map(({ question, result }) => renderResultCard(question, result)).join("")}
-    </div>
-  `;
-}
-
-function renderResultCard(question, result) {
-  const strengths = Array.isArray(result.strengths) ? result.strengths.filter(Boolean) : [];
-  const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses.filter(Boolean) : [];
-  const subscores = result.subscores && typeof result.subscores === "object" ? result.subscores : null;
-
-  return `
-    <article class="result-card">
-      <div class="result-card-head">
-        <div>
-          <strong>${escapeHtml(question.questionNumber)}</strong>
-          <div class="muted">${escapeHtml(question.section)} • ${escapeHtml(String(question.markCategory))} marks</div>
-        </div>
-        <div class="question-score">${escapeHtml(String(result.score))}/${escapeHtml(String(result.max_score))}</div>
-      </div>
-      ${result.level ? `<div class="badge-row"><span class="badge">${escapeHtml(result.level)}</span></div>` : ""}
-      ${subscores ? `
-        <div class="subscore-box">
-          <div><strong>Content and organisation:</strong> ${escapeHtml(String(subscores.content_and_organisation ?? 0))}</div>
-          <div><strong>Technical accuracy:</strong> ${escapeHtml(String(subscores.technical_accuracy ?? 0))}</div>
-        </div>
-      ` : ""}
-      ${strengths.length ? `
-        <div>
-          <strong>Strengths</strong>
-          <ul class="breakdown-list">${strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-        </div>
-      ` : ""}
-      ${weaknesses.length ? `
-        <div>
-          <strong>Weaknesses / Improvements</strong>
-          <ul class="breakdown-list">${weaknesses.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-        </div>
-      ` : ""}
-      <p class="question-text"><strong>Why this mark:</strong> ${escapeHtml(result.why_this_mark || "No explanation returned.")}</p>
-      <p class="question-text"><strong>How to reach the next level:</strong> ${escapeHtml(result.next_level || "Develop the answer further with precise textual support and more detailed explanation.")}</p>
-    </article>
-  `;
-}
-
-function buildCopyText(pack, results) {
-  const total = results.reduce((sum, item) => sum + Number(item.result.score || 0), 0);
-  const maxTotal = results.reduce((sum, item) => sum + Number(item.result.max_score || item.question.markCategory || 0), 0);
-
-  const lines = [
-    "AQA GCSE English Language Practice Quiz Marker",
-    `${pack.paper}`,
-    `Total score: ${total}/${maxTotal}`,
-    ""
-  ];
-
-  results.forEach(({ question, result }) => {
-    lines.push(`${question.questionNumber} (${question.markCategory} marks)`);
-    lines.push(`Score: ${result.score}/${result.max_score}`);
-    if (result.level) {
-      lines.push(`Level: ${result.level}`);
-    }
-    if (result.subscores) {
-      lines.push(`Content and organisation: ${result.subscores.content_and_organisation ?? 0}`);
-      lines.push(`Technical accuracy: ${result.subscores.technical_accuracy ?? 0}`);
-    }
-    if (Array.isArray(result.strengths) && result.strengths.length) {
-      lines.push("Strengths:");
-      result.strengths.forEach((item) => lines.push(`- ${item}`));
-    }
-    if (Array.isArray(result.weaknesses) && result.weaknesses.length) {
-      lines.push("Weaknesses / Improvements:");
-      result.weaknesses.forEach((item) => lines.push(`- ${item}`));
-    }
-    lines.push(`Why this mark: ${result.why_this_mark || ""}`);
-    lines.push(`How to reach the next level: ${result.next_level || ""}`);
-    lines.push("");
-  });
-
-  return lines.join("\n");
-}
-
-function showNotice(message, isError = false) {
-  dom.resultWindow.innerHTML = `<div class="notice${isError ? " error" : ""}">${escapeHtml(message)}</div>`;
 }
 
 function sampleOne(items) {
@@ -849,7 +1093,6 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
-
 
 function slugify(value) {
   return String(value || "")
