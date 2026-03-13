@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AQA GCSE English Mock Paper</title>
+  <title>AQA GCSE English Practice Quiz</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,29 +12,25 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">AQA-style English Language practice</p>
-        <h1>GCSE English Mock Paper</h1>
-        <p class="muted">Generate a full paper, answer every question, then mark it instantly.</p>
+        <h1>GCSE English Practice Quiz</h1>
+        <p class="muted">Choose a paper part, answer every question, then mark it instantly.</p>
       </div>
     </header>
 
     <div class="layout">
       <aside class="sidebar">
         <section class="panel">
-          <h2>Generate a paper</h2>
-          <label class="small-label" for="paper-mode">Paper type</label>
-          <select id="paper-mode">
-            <option>Paper 1</option>
-            <option>Paper 2</option>
-            <option>Random</option>
-          </select>
+          <h2>Generate a quiz</h2>
+          <label class="small-label" for="paper-mode">Paper selection</label>
+          <select id="paper-mode"></select>
           <div class="button-row">
-            <button id="generate-paper-btn" class="primary-btn">Generate full paper</button>
+            <button id="generate-paper-btn" class="primary-btn">Generate quiz</button>
             <button id="clear-answers-btn" class="ghost-btn">Clear answers</button>
           </div>
         </section>
 
         <section class="panel">
-          <h2>Paper details</h2>
+          <h2>Quiz details</h2>
           <div id="current-paper-meta" class="meta-grid">
             <div class="meta-card">Loading…</div>
           </div>
@@ -44,7 +40,7 @@
       <main class="main-content">
         <section class="panel exam-paper">
           <div id="paper-view">
-            <div class="notice">Loading paper…</div>
+            <div class="notice">Loading quiz…</div>
           </div>
         </section>
 
