@@ -5,13 +5,61 @@ const BANK_CANDIDATE_URLS = [
 ];
 
 const MARKER_ENDPOINT = "https://english-test-five.vercel.app/api/mark";
-const PAPER_MODE_STORAGE_KEY = "aqaPaperMode";
 const ANSWER_STORAGE_PREFIX = "aqaPaperAnswers:";
+const PAPER_MODE_STORAGE_KEY = "aqaPaperModeParts";
+
+const PAPER_MODES = [
+  {
+    id: "Paper 1 - Part 1",
+    basePaper: "Paper 1",
+    part: "Part 1",
+    time: "45 minutes",
+    questionNumbers: ["Question 1", "Question 2", "Question 4"]
+  },
+  {
+    id: "Paper 1 - Part 2",
+    basePaper: "Paper 1",
+    part: "Part 2",
+    time: "1 hour",
+    questionNumbers: ["Question 3", "Question 5"]
+  },
+  {
+    id: "Paper 2 - Part 1",
+    basePaper: "Paper 2",
+    part: "Part 1",
+    time: "45 minutes",
+    questionNumbers: ["Question 1", "Question 2", "Question 4"],
+    questionOverrides: {
+      "Question 4": {
+        markCategory: 20,
+        rubricMaxScore: 20,
+        rubricNotes: "Adapted for this part-based quiz. Reward a clear, comparative response with supported judgements and explanation of how methods present viewpoints. Mark out of 20 for this site layout."
+      }
+    }
+  },
+  {
+    id: "Paper 2 - Part 2",
+    basePaper: "Paper 2",
+    part: "Part 2",
+    time: "1 hour",
+    questionNumbers: ["Question 3", "Question 5"],
+    questionOverrides: {
+      "Question 3": {
+        markCategory: 8,
+        rubricMaxScore: 8,
+        rubricNotes: "Adapted for this part-based quiz. Reward concise, relevant language analysis linked to viewpoint and effect. Mark out of 8 for this site layout."
+      }
+    }
+  }
+];
+
+const savedMode = localStorage.getItem(PAPER_MODE_STORAGE_KEY);
+const defaultMode = PAPER_MODES.some((mode) => mode.id === savedMode) ? savedMode : PAPER_MODES[0].id;
 
 const state = {
   bank: null,
   currentPack: null,
-  paperMode: localStorage.getItem(PAPER_MODE_STORAGE_KEY) || "Paper 1",
+  paperMode: defaultMode,
   markerEndpoint: MARKER_ENDPOINT,
   answers: {},
   lastCopyText: "",
@@ -29,15 +77,20 @@ const dom = {
   copyFeedbackBtn: document.getElementById("copy-feedback-btn")
 };
 
-if (dom.paperMode) {
-  dom.paperMode.value = state.paperMode;
-}
-
 init();
 
 async function init() {
+  populatePaperModeOptions();
   bindStaticEvents();
+  if (dom.paperMode) {
+    dom.paperMode.value = state.paperMode;
+  }
   await loadBank();
+}
+
+function populatePaperModeOptions() {
+  if (!dom.paperMode) return;
+  dom.paperMode.innerHTML = PAPER_MODES.map((mode) => `<option value="${escapeHtml(mode.id)}">${escapeHtml(mode.id)}</option>`).join("");
 }
 
 function bindStaticEvents() {
@@ -108,28 +161,32 @@ function isValidBank(data) {
   return !!(data && Array.isArray(data.packs) && data.packs.length);
 }
 
+function getModeConfig(modeId) {
+  return PAPER_MODES.find((mode) => mode.id === modeId) || PAPER_MODES[0];
+}
+
 function generatePaper(requestedMode) {
   const availablePacks = Array.isArray(state.bank?.packs) ? state.bank.packs : [];
   if (!availablePacks.length) return;
 
-  const actualPaper = requestedMode === "Random"
-    ? sampleOne(state.bank.paperTypes.map((paper) => paper.id))
-    : requestedMode;
+  const mode = getModeConfig(requestedMode);
+  const candidates = availablePacks.filter((pack) => pack.paper === mode.basePaper);
 
-  const candidates = availablePacks.filter((pack) => pack.paper === actualPaper);
   if (!candidates.length) {
-    dom.paperView.innerHTML = `<div class="notice error">No paper packs are available for ${escapeHtml(actualPaper)}.</div>`;
+    dom.paperView.innerHTML = `<div class="notice error">No quiz packs are available for ${escapeHtml(mode.id)}.</div>`;
     return;
   }
 
-  const nextPack = chooseDifferentRandomPack(candidates, state.currentPack?.id);
-  state.currentPack = nextPack;
-  state.answers = loadSavedAnswers(nextPack.id);
+  const nextBasePack = chooseDifferentRandomPack(candidates, state.currentPack?.basePackId);
+  const displayPack = buildDisplayPack(nextBasePack, mode);
+
+  state.currentPack = displayPack;
+  state.answers = loadSavedAnswers(displayPack.id);
   state.lastCopyText = "";
   state.lastResults = [];
   dom.copyFeedbackBtn.disabled = true;
   renderPaper();
-  dom.resultWindow.innerHTML = `<p class="muted">This paper is ready. When the student has answered the questions, click <strong>Mark this paper</strong>.</p>`;
+  dom.resultWindow.innerHTML = `<p class="muted">This quiz is ready. When the student has answered the questions, click <strong>Mark this paper</strong>.</p>`;
 }
 
 function chooseDifferentRandomPack(candidates, previousId) {
@@ -138,12 +195,59 @@ function chooseDifferentRandomPack(candidates, previousId) {
   return sampleOne(filtered.length ? filtered : candidates);
 }
 
+function buildDisplayPack(basePack, mode) {
+  const selectedQuestions = mode.questionNumbers
+    .map((questionNumber) => getQuestionByNumber(basePack.questions, questionNumber))
+    .filter(Boolean)
+    .map((question) => cloneQuestionForMode(question, mode));
+
+  return {
+    ...basePack,
+    id: `${basePack.id}__${slugify(mode.id)}`,
+    basePackId: basePack.id,
+    paper: mode.id,
+    basePaper: mode.basePaper,
+    part: mode.part,
+    displayTime: mode.time,
+    questions: selectedQuestions
+  };
+}
+
+function getQuestionByNumber(questions, questionNumber) {
+  return Array.isArray(questions)
+    ? questions.find((question) => question.questionNumber === questionNumber)
+    : null;
+}
+
+function cloneQuestionForMode(question, mode) {
+  const cloned = JSON.parse(JSON.stringify(question));
+  const override = mode.questionOverrides?.[cloned.questionNumber];
+
+  if (override) {
+    if (typeof override.markCategory === "number") {
+      cloned.markCategory = override.markCategory;
+    }
+    if (typeof override.rubricMaxScore === "number") {
+      cloned.rubric = cloned.rubric || {};
+      cloned.rubric.maxScore = override.rubricMaxScore;
+    }
+    if (typeof override.rubricNotes === "string") {
+      cloned.rubric = cloned.rubric || {};
+      cloned.rubric.notes = override.rubricNotes;
+    }
+  }
+
+  return cloned;
+}
+
 function renderPaper() {
   const pack = state.currentPack;
   if (!pack) return;
 
-  const paperInfo = state.bank.paperTypes.find((paper) => paper.id === pack.paper);
+  const paperInfo = state.bank.paperTypes.find((paper) => paper.id === pack.basePaper);
   const totalMarks = pack.questions.reduce((sum, question) => sum + Number(question.markCategory || 0), 0);
+  const readingQuestions = pack.questions.filter((question) => String(question.section || "").includes("Section A"));
+  const writingQuestions = pack.questions.filter((question) => String(question.section || "").includes("Section B"));
 
   dom.currentPaperMeta.innerHTML = `
     <div class="meta-card">
@@ -152,7 +256,7 @@ function renderPaper() {
     </div>
     <div class="meta-card">
       <strong>Time</strong><br />
-      ${escapeHtml(paperInfo?.time || "1 hour 45 minutes")}
+      ${escapeHtml(pack.displayTime || paperInfo?.time || "1 hour")}
     </div>
     <div class="meta-card">
       <strong>Total marks</strong><br />
@@ -164,36 +268,48 @@ function renderPaper() {
     </div>
   `;
 
+  const readingSection = readingQuestions.length
+    ? `
+      <section class="paper-section">
+        <div class="section-title">Section A: Reading</div>
+        ${renderSourceBlock(pack.sourceA)}
+        ${pack.sourceB ? renderSourceBlock(pack.sourceB) : ""}
+        <div class="questions-area">
+          ${readingQuestions.map(renderQuestionCard).join("")}
+        </div>
+      </section>
+    `
+    : "";
+
+  const writingSection = writingQuestions.length
+    ? `
+      <section class="paper-section">
+        <div class="section-title">Section B: Writing</div>
+        <div class="questions-area">
+          ${writingQuestions.map(renderQuestionCard).join("")}
+        </div>
+      </section>
+    `
+    : "";
+
   dom.paperView.innerHTML = `
     <div class="exam-front">
       <div class="exam-title-row">
         <div>
           <p class="paper-brand">AQA GCSE English Language</p>
-          <h1>${escapeHtml(pack.paper)}: ${escapeHtml(paperInfo?.title || "")}</h1>
+          <h1>${escapeHtml(pack.paper)}</h1>
+          <p class="muted">${escapeHtml(paperInfo?.title || "")}</p>
         </div>
         <div class="total-badge">${escapeHtml(String(totalMarks))} marks</div>
       </div>
       <div class="front-boxes">
-        <div class="front-box"><strong>Instructions</strong><br />Answer all questions. Write your answers in the spaces provided.</div>
-        <div class="front-box"><strong>Time allowed</strong><br />${escapeHtml(paperInfo?.time || "1 hour 45 minutes")}</div>
+        <div class="front-box"><strong>Instructions</strong><br />Answer all questions in this part. Write your answers in the spaces provided.</div>
+        <div class="front-box"><strong>Time allowed</strong><br />${escapeHtml(pack.displayTime || paperInfo?.time || "1 hour")}</div>
       </div>
     </div>
 
-    <section class="paper-section">
-      <div class="section-title">Section A: Reading</div>
-      ${renderSourceBlock(pack.sourceA)}
-      ${pack.sourceB ? renderSourceBlock(pack.sourceB) : ""}
-      <div class="questions-area">
-        ${pack.questions.filter((question) => question.section.includes("Section A")).map(renderQuestionCard).join("")}
-      </div>
-    </section>
-
-    <section class="paper-section">
-      <div class="section-title">Section B: Writing</div>
-      <div class="questions-area">
-        ${pack.questions.filter((question) => question.section.includes("Section B")).map(renderQuestionCard).join("")}
-      </div>
-    </section>
+    ${readingSection}
+    ${writingSection}
   `;
 }
 
@@ -657,7 +773,7 @@ function buildCopyText(pack, results) {
   const maxTotal = results.reduce((sum, item) => sum + Number(item.result.max_score || item.question.markCategory || 0), 0);
 
   const lines = [
-    "AQA GCSE English Language Mock Marker",
+    "AQA GCSE English Language Practice Quiz Marker",
     `${pack.paper}`,
     `Total score: ${total}/${maxTotal}`,
     ""
@@ -732,4 +848,12 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
