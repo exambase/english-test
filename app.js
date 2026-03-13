@@ -567,30 +567,37 @@ async function markCurrentPaper() {
 }
 
 async function markSingleQuestion(question, pack, previousEntry) {
-  const answer = normaliseAnswerForSending(question, state.answers[question.id]);
   const attemptCount = Number(previousEntry?.attemptCount || 0) + 1;
+  const requestPayload = buildMarkingRequestPayload({
+    questionSnapshot: previousEntry?.requestPayload?.question || question,
+    packMetaSnapshot: previousEntry?.requestPayload?.packMeta || buildPackMetaSnapshot(pack),
+    rawAnswer: state.answers[question.id]
+  });
 
-  if (!answer) {
-    return buildResultEntry(question, buildBlankResult(question), {
+  if (!requestPayload.answer) {
+    return buildResultEntry(requestPayload.question, buildBlankResult(requestPayload.question), {
       status: "blank",
-      attemptCount
+      attemptCount,
+      requestPayload
     });
   }
 
   try {
-    const result = question.questionType === "select-true-statements"
-      ? markTrueStatementsLocally(question, answer)
-      : await sendForMarking(state.markerEndpoint, question, answer, pack);
+    const result = requestPayload.question.questionType === "select-true-statements"
+      ? markTrueStatementsLocally(requestPayload.question, requestPayload.answer)
+      : await sendForMarking(state.markerEndpoint, requestPayload);
 
-    return buildResultEntry(question, result, {
+    return buildResultEntry(requestPayload.question, result, {
       status: "marked",
-      attemptCount
+      attemptCount,
+      requestPayload
     });
   } catch (error) {
-    return buildResultEntry(question, buildFailedResult(question, error), {
+    return buildResultEntry(requestPayload.question, buildFailedResult(requestPayload.question, error), {
       status: "error",
       attemptCount,
-      errorMessage: error?.message || "This question could not be marked."
+      errorMessage: error?.message || "This question could not be marked.",
+      requestPayload
     });
   }
 }
@@ -601,24 +608,48 @@ function buildResultEntry(question, result, meta = {}) {
     result,
     status: meta.status || "marked",
     attemptCount: Number(meta.attemptCount || 1),
-    errorMessage: meta.errorMessage || ""
+    errorMessage: meta.errorMessage || "",
+    requestPayload: meta.requestPayload || null
+  };
+}
+
+function buildPackMetaSnapshot(pack) {
+  return {
+    id: pack?.id || "",
+    paper: pack?.paper || "",
+    title: pack?.title || "",
+    theme: pack?.theme || "",
+    sourceA: clonePlain(pack?.sourceA || null),
+    sourceB: clonePlain(pack?.sourceB || null)
+  };
+}
+
+function buildMarkingRequestPayload({ questionSnapshot, packMetaSnapshot, rawAnswer }) {
+  const question = clonePlain(questionSnapshot);
+  const packMeta = clonePlain(packMetaSnapshot);
+  const answer = normaliseAnswerForSending(question, rawAnswer);
+
+  return {
+    question,
+    answer,
+    packMeta
   };
 }
 
 async function remarkQuestion(questionId) {
   if (!state.currentPack || state.busyTask) return;
 
-  const question = state.currentPack.questions.find((item) => item.id === questionId);
-  if (!question) return;
-
   const existingIndex = state.lastResults.findIndex((entry) => entry.question.id === questionId);
   const previousEntry = existingIndex >= 0 ? state.lastResults[existingIndex] : null;
+  const liveQuestion = state.currentPack.questions.find((item) => item.id === questionId);
+  const question = previousEntry?.requestPayload?.question || liveQuestion;
+  if (!question) return;
 
   state.busyTask = {
     type: "retry",
     questionId
   };
-  setNotice(`Marking ${question.questionNumber} again…`);
+  setNotice(`Marking ${question.questionNumber} again with the original question and source context…`);
   syncToolbarButtons();
   renderResultWindow();
 
@@ -646,11 +677,11 @@ async function remarkQuestion(questionId) {
     const remainingRetryCount = countRetryableQuestions(state.lastResults);
     if (remainingRetryCount) {
       setNotice(
-        `${question.questionNumber} was marked again successfully. ${remainingRetryCount} question${remainingRetryCount === 1 ? " still needs" : "s still need"} retry.`,
+        `${question.questionNumber} was marked again successfully using the same question and source context. ${remainingRetryCount} question${remainingRetryCount === 1 ? " still needs" : "s still need"} retry.`,
         true
       );
     } else {
-      setNotice(`${question.questionNumber} was marked again successfully.`);
+      setNotice(`${question.questionNumber} was marked again successfully using the same question and source context.`);
     }
   }
 
@@ -894,6 +925,7 @@ function setNotice(message, isError = false) {
 
 function syncToolbarButtons() {
   const busy = state.busyTask;
+  const hasRetryableQuestions = countRetryableQuestions(state.lastResults) > 0;
 
   dom.markPaperBtn.disabled = Boolean(busy);
   dom.generatePaperBtn.disabled = Boolean(busy);
@@ -907,27 +939,16 @@ function syncToolbarButtons() {
     dom.markPaperBtn.textContent = "Mark this paper";
   }
 
-  dom.copyFeedbackBtn.disabled = Boolean(busy) || !state.lastCopyText;
+  dom.copyFeedbackBtn.disabled = Boolean(busy) || !state.lastCopyText || hasRetryableQuestions;
 }
 
-async function sendForMarking(endpoint, question, answer, pack) {
+async function sendForMarking(endpoint, requestPayload) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      question,
-      answer,
-      packMeta: {
-        id: pack.id,
-        paper: pack.paper,
-        title: pack.title,
-        theme: pack.theme,
-        sourceA: pack.sourceA || null,
-        sourceB: pack.sourceB || null
-      }
-    })
+    body: JSON.stringify(requestPayload)
   });
 
   let data = {};
@@ -941,7 +962,7 @@ async function sendForMarking(endpoint, question, answer, pack) {
     throw new Error(data.error || `Marking request failed (${response.status}).`);
   }
 
-  return normaliseRemoteResult(data, question);
+  return normaliseRemoteResult(data, requestPayload.question);
 }
 
 function normaliseRemoteResult(data, question) {
@@ -1051,6 +1072,11 @@ function normaliseAnswerForSending(question, rawValue) {
     return values.join(", ").trim();
   }
   return String(rawValue || "").trim();
+}
+
+function clonePlain(value) {
+  if (value === null || value === undefined) return value;
+  return JSON.parse(JSON.stringify(value));
 }
 
 function sampleOne(items) {
